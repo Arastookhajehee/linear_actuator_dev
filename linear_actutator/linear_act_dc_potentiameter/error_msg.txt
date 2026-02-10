@@ -1,0 +1,7 @@
+C:\Users\akhaj\source\repos\agb\linear_actutator\linear_act_dc_potentiameter\linear_act_dc_potentiameter.ino: In function 'void loop()':
+C:\Users\akhaj\source\repos\agb\linear_actutator\linear_act_dc_potentiameter\linear_act_dc_potentiameter.ino:34:20: error: 'lt' was not declared in this scope
+   if (sensorValue &lt; 512)
+                    ^~
+exit status 1
+
+Compilation error: 'lt' was not declared in this scope
