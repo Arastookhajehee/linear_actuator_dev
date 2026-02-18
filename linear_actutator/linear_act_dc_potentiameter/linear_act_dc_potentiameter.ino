@@ -178,10 +178,10 @@ void loop()
 
   driveTowardTarget(lastSensorValue);
 
-  Serial.print("median=");
-  Serial.print(lastSensorValue);
-  Serial.print(" target=");
-  Serial.print(targetValue);
-  Serial.print(" error=");
-  Serial.println(targetValue - lastSensorValue);
+  // Serial.print("median=");
+  // Serial.print(lastSensorValue);
+  // Serial.print(" target=");
+  // Serial.print(targetValue);
+  // Serial.print(" error=");
+  // Serial.println(targetValue - lastSensorValue);
 }
