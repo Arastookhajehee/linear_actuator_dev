@@ -11,7 +11,7 @@ const int SENSOR_PIN = A3;
 const int RPWM_Output = 5;
 const int LPWM_Output = 6;
 
-const int TARGET_VALUE = 250;
+int targetValue = 250;
 const int TARGET_DEADBAND = 30;
 const int DRIVE_PWM = 70;
 const bool invertDirection = false;
@@ -22,6 +22,76 @@ unsigned long lastSampleMs = 0;
 int lastSensorValue = 0;
 
 const int MEDIAN_SAMPLES = 7;
+const int SERIAL_BUFFER_LEN = 16;
+
+char serialBuffer[SERIAL_BUFFER_LEN];
+int serialBufferIndex = 0;
+bool serialLineOverflow = false;
+
+void processTargetLine(const char *line)
+{
+  char *endPtr;
+  long parsedTarget = strtol(line, &endPtr, 10);
+
+  while (*endPtr == ' ' || *endPtr == '\t')
+  {
+    endPtr++;
+  }
+
+  if (line[0] == '\0' || *endPtr != '\0' || parsedTarget < 0 || parsedTarget > 1023)
+  {
+    Serial.println("INVALID_TARGET");
+    return;
+  }
+
+  targetValue = (int)parsedTarget;
+  Serial.print("TARGET_SET ");
+  Serial.println(targetValue);
+}
+
+void handleSerialInput()
+{
+  while (Serial.available() > 0)
+  {
+    char ch = (char)Serial.read();
+
+    if (ch == '\r')
+    {
+      continue;
+    }
+
+    if (ch == '\n')
+    {
+      if (serialLineOverflow)
+      {
+        Serial.println("INVALID_TARGET");
+      }
+      else
+      {
+        serialBuffer[serialBufferIndex] = '\0';
+        processTargetLine(serialBuffer);
+      }
+
+      serialBufferIndex = 0;
+      serialLineOverflow = false;
+      continue;
+    }
+
+    if (serialLineOverflow)
+    {
+      continue;
+    }
+
+    if (serialBufferIndex < SERIAL_BUFFER_LEN - 1)
+    {
+      serialBuffer[serialBufferIndex++] = ch;
+    }
+    else
+    {
+      serialLineOverflow = true;
+    }
+  }
+}
 
 int readMedianSensor()
 {
@@ -55,7 +125,7 @@ void stopMotor()
 
 void driveTowardTarget(int sensorValue)
 {
-  int error = TARGET_VALUE - sensorValue;
+  int error = targetValue - sensorValue;
 
   if (abs(error) <= TARGET_DEADBAND)
   {
@@ -89,10 +159,14 @@ void setup()
 
   stopMotor();
   Serial.println("READY");
+  Serial.print("TARGET_SET ");
+  Serial.println(targetValue);
 }
 
 void loop()
 {
+  handleSerialInput();
+
   unsigned long now = millis();
   if (now - lastSampleMs < SAMPLE_INTERVAL_MS)
   {
@@ -107,7 +181,7 @@ void loop()
   Serial.print("median=");
   Serial.print(lastSensorValue);
   Serial.print(" target=");
-  Serial.print(TARGET_VALUE);
+  Serial.print(targetValue);
   Serial.print(" error=");
-  Serial.println(TARGET_VALUE - lastSensorValue);
+  Serial.println(targetValue - lastSensorValue);
 }
