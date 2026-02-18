@@ -6,6 +6,6 @@
 
 File: [Potentiometer Linear Actuator](/linear_actutator/linear_act_dc_potentiameter/linear_act_dc_potentiameter.ino)
 
-- the potentiometer value is supposed to be "  // sensor value is in the range 0 to 1023"
-- The potentiometer does not seem to work in this range.
-- [ ] Print the potentiameter value to the console and test its range.
+[reference guide link](https://www.hessmer.org/blog/2013/12/28/ibt-2-h-bridge-with-arduino/)
+
+![reference diagram](./linear_act_dc_potentiameter/ref_images/potentiometer_ref_img.png)

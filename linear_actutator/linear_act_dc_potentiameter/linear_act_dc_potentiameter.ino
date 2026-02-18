@@ -1,131 +1,83 @@
 /*
 IBT-2 Motor Control Board driven by Arduino.
- 
-Speed and direction controlled by a potentiometer attached to analog input 0.
-One side pin of the potentiometer (either one) to ground; the other side pin to +5V
- 
-Connection to the IBT-2 board:
-IBT-2 pin 1 (RPWM) to Arduino pin 5(PWM)
-IBT-2 pin 2 (LPWM) to Arduino pin 6(PWM)
-IBT-2 pins 3 (R_EN), 4 (L_EN), 7 (VCC) to Arduino 5V pin
-IBT-2 pin 8 (GND) to Arduino GND
-IBT-2 pins 5 (R_IS) and 6 (L_IS) not connected
-*/
- 
-const int SENSOR_PIN = A0;
 
+The actuator follows a target position from a draw-wire sensor:
+- Sensor input on A3
+- Hard-coded target value = 250
+- Sensor sampled every 100 ms
+*/
+
+const int SENSOR_PIN = A3;
 const int RPWM_Output = 5;
 const int LPWM_Output = 6;
 
-const int DIR_BACKWARD = -1;
-const int DIR_STOP = 0;
-const int DIR_FORWARD = 1;
-
-// Set true if forward/backward are swapped for your wiring/mechanics.
+const int TARGET_VALUE = 250;
+const int TARGET_DEADBAND = 30;
+const int DRIVE_PWM = 70;
 const bool invertDirection = false;
 
-int motorDirection = DIR_STOP;
-bool hasValidDirectionCmd = false;
+const unsigned long SAMPLE_INTERVAL_MS = 100;
+unsigned long lastSampleMs = 0;
 
-char serialBuffer[12];
-byte serialIndex = 0;
+int lastSensorValue = 0;
 
-void driveMotor(int direction, int pwm)
+const int MEDIAN_SAMPLES = 7;
+
+int readMedianSensor()
 {
-  if (!hasValidDirectionCmd || direction == DIR_STOP)
+  int samples[MEDIAN_SAMPLES];
+
+  for (int i = 0; i < MEDIAN_SAMPLES; i++)
   {
-    analogWrite(RPWM_Output, 0);
-    analogWrite(LPWM_Output, 0);
+    samples[i] = analogRead(SENSOR_PIN);
+  }
+
+  for (int i = 1; i < MEDIAN_SAMPLES; i++)
+  {
+    int key = samples[i];
+    int j = i - 1;
+    while (j >= 0 && samples[j] > key)
+    {
+      samples[j + 1] = samples[j];
+      j--;
+    }
+    samples[j + 1] = key;
+  }
+
+  return samples[MEDIAN_SAMPLES / 2];
+}
+
+void stopMotor()
+{
+  analogWrite(RPWM_Output, 0);
+  analogWrite(LPWM_Output, 0);
+}
+
+void driveTowardTarget(int sensorValue)
+{
+  int error = TARGET_VALUE - sensorValue;
+
+  if (abs(error) <= TARGET_DEADBAND)
+  {
+    stopMotor();
     return;
   }
 
-  bool driveRPWM = (direction == DIR_FORWARD);
+  bool shouldDriveForward = (error > 0);
   if (invertDirection)
   {
-    driveRPWM = !driveRPWM;
+    shouldDriveForward = !shouldDriveForward;
   }
 
-  if (driveRPWM)
+  if (shouldDriveForward)
   {
     analogWrite(LPWM_Output, 0);
-    analogWrite(RPWM_Output, pwm);
+    analogWrite(RPWM_Output, DRIVE_PWM);
   }
   else
   {
     analogWrite(RPWM_Output, 0);
-    analogWrite(LPWM_Output, pwm);
-  }
-}
-
-void applyDirectionLine(char *line)
-{
-  while (*line == ' ' || *line == '\t')
-  {
-    line++;
-  }
-
-  int len = strlen(line);
-  while (len > 0 && (line[len - 1] == ' ' || line[len - 1] == '\t'))
-  {
-    line[len - 1] = '\0';
-    len--;
-  }
-
-  if (strcmp(line, "-1") == 0)
-  {
-    motorDirection = DIR_BACKWARD;
-    hasValidDirectionCmd = true;
-    Serial.println("OK -1");
-  }
-  else if (strcmp(line, "0") == 0)
-  {
-    motorDirection = DIR_STOP;
-    hasValidDirectionCmd = true;
-    Serial.println("OK 0");
-  }
-  else if (strcmp(line, "1") == 0)
-  {
-    motorDirection = DIR_FORWARD;
-    hasValidDirectionCmd = true;
-    Serial.println("OK 1");
-  }
-  else if (len > 0)
-  {
-    Serial.println("ERR");
-  }
-}
-
-void readSerialDirection()
-{
-  while (Serial.available() > 0)
-  {
-    char c = (char)Serial.read();
-
-    if (c == '\r')
-    {
-      continue;
-    }
-
-    if (c == '\n')
-    {
-      serialBuffer[serialIndex] = '\0';
-      if (serialIndex > 0)
-      {
-        applyDirectionLine(serialBuffer);
-      }
-      serialIndex = 0;
-      continue;
-    }
-
-    if (serialIndex < sizeof(serialBuffer) - 1)
-    {
-      serialBuffer[serialIndex++] = c;
-    }
-    else
-    {
-      serialIndex = 0;
-      Serial.println("ERR");
-    }
+    analogWrite(LPWM_Output, DRIVE_PWM);
   }
 }
 
@@ -135,20 +87,27 @@ void setup()
   pinMode(RPWM_Output, OUTPUT);
   pinMode(LPWM_Output, OUTPUT);
 
-  // Safe startup: always stopped until a valid serial command arrives.
-  analogWrite(RPWM_Output, 0);
-  analogWrite(LPWM_Output, 0);
-
+  stopMotor();
   Serial.println("READY");
 }
 
 void loop()
 {
-  readSerialDirection();
+  unsigned long now = millis();
+  if (now - lastSampleMs < SAMPLE_INTERVAL_MS)
+  {
+    return;
+  }
 
-  int sensorValue = analogRead(SENSOR_PIN);
-  int speedPWM = map(sensorValue, 0, 1023, 0, 255);
-  speedPWM = constrain(speedPWM, 0, 255);
+  lastSampleMs = now;
+  lastSensorValue = readMedianSensor();
 
-  driveMotor(motorDirection, speedPWM);
+  driveTowardTarget(lastSensorValue);
+
+  Serial.print("median=");
+  Serial.print(lastSensorValue);
+  Serial.print(" target=");
+  Serial.print(TARGET_VALUE);
+  Serial.print(" error=");
+  Serial.println(TARGET_VALUE - lastSensorValue);
 }
