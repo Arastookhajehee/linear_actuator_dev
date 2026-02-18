@@ -3,8 +3,8 @@ IBT-2 Motor Control Board driven by Arduino.
 
 The actuator follows a target position from a draw-wire sensor:
 - Sensor input on A3
-- Hard-coded target value = 250
-- Sensor sampled every 100 ms
+- Initial target value = 250
+- Target updated by serial input (0-1023, newline terminated)
 */
 
 const int SENSOR_PIN = A3;
@@ -177,11 +177,4 @@ void loop()
   lastSensorValue = readMedianSensor();
 
   driveTowardTarget(lastSensorValue);
-
-  // Serial.print("median=");
-  // Serial.print(lastSensorValue);
-  // Serial.print(" target=");
-  // Serial.print(targetValue);
-  // Serial.print(" error=");
-  // Serial.println(targetValue - lastSensorValue);
 }
