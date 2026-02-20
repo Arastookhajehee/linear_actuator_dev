@@ -4,6 +4,11 @@ __pycache__/
 *$py.class
 
 # Virtual environments
+.venv_robot/
+venv_robot/
+env_robot/
+ENV_robot/
+
 .venv/
 venv/
 env/
