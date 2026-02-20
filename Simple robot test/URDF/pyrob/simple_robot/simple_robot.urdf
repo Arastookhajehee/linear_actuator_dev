@@ -1,0 +1,172 @@
+<?xml version='1.0' encoding='utf-8'?>
+<robot name="simple_robot">
+    <link name="body.stp">
+        <inertial>
+            <origin xyz="0.0 1.621126282564851e-18 0.03984534149046264" rpy="0.0 0.0 0.0" />
+            <mass value="0.3440669943918237" />
+            <inertia ixx="0.00019714522785826342" iyy="0.00019714522785826256" izz="3.0118195869688086e-05" ixy="1.1155520951433573e-20" iyz="-8.626481217307899e-23" ixz="2.2311041902867146e-20" />
+        </inertial>
+        <visual name="body.stp_visual">
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/body.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="body.stp_collision">
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/body.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="shoulder.stp">
+        <inertial>
+            <origin xyz="0.014118808652535666 -1.2658582534437017e-17 0.0034899293253138454" rpy="0.0 -0.0 0.0" />
+            <mass value="0.03356008583508969" />
+            <inertia ixx="1.0585053892821976e-06" iyy="1.0077157888615802e-05" izz="1.0979410651720156e-05" ixy="8.145896884284066e-23" iyz="-1.528967642487001e-21" ixz="-4.2140955689242316e-07" />
+        </inertial>
+        <visual name="shoulder.stp_visual">
+            <origin xyz="-6.2803698347351e-19 1.88411095042053e-18 2.9809253021539917e-09" rpy="0.0 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/shoulder.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="shoulder.stp_collision">
+            <origin xyz="-6.2803698347351e-19 1.88411095042053e-18 2.9809253021539917e-09" rpy="0.0 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/shoulder.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="elbow.stp">
+        <inertial>
+            <origin xyz="0.00858243974019195 -2.1852796111775996e-13 0.0021214366133889763" rpy="0.0 -0.0 0.0" />
+            <mass value="0.007538097411619152" />
+            <inertia ixx="8.785319042541495e-08" iyy="8.363778717560108e-07" izz="9.112625009748942e-07" ixy="-1.1046168139032928e-15" iyz="-2.336764077036089e-19" ixz="-3.497589618327453e-08" />
+        </inertial>
+        <visual name="elbow.stp_visual">
+            <origin xyz="-3.6315201068504165e-09 1.181570473365232e-17 4.41900898096037e-09" rpy="1.232595164407831e-32 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/elbow.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="elbow.stp_collision">
+            <origin xyz="-3.6315201068504165e-09 1.181570473365232e-17 4.41900898096037e-09" rpy="1.232595164407831e-32 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/elbow.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="wrist_top.stp">
+        <inertial>
+            <origin xyz="0.007776366795536722 -7.523610924165009e-14 -0.0010948037986532988" rpy="0.0 -0.0 0.0" />
+            <mass value="0.005305712636034447" />
+            <inertia ixx="1.8589412386445827e-07" iyy="3.7791494731909375e-07" izz="2.9646230606317076e-07" ixy="6.198675763675981e-16" iyz="6.981109714331466e-19" ixz="9.898188058640403e-08" />
+        </inertial>
+        <visual name="wrist_top.stp_visual">
+            <origin xyz="-2.040612105957962e-09 1.132806093659728e-17 -4.150562293858684e-09" rpy="0.0 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/wrist_top.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="wrist_top.stp_collision">
+            <origin xyz="-2.040612105957962e-09 1.132806093659728e-17 -4.150562293858684e-09" rpy="0.0 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/wrist_top.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="wrist_front.stp">
+        <inertial>
+            <origin xyz="0.0006837032958656053 0.0014130199999999001 0.012065636246306077" rpy="0.0 -0.0 0.0" />
+            <mass value="0.0028270422741923525" />
+            <inertia ixx="9.54473126984969e-08" iyy="6.450338609655093e-08" izz="3.353865911792851e-08" ixy="-1.962840590366452e-22" iyz="-2.6700332474685146e-21" ixz="-3.0991730220858405e-09" />
+        </inertial>
+        <visual name="wrist_front.stp_visual">
+            <origin xyz="-0.0003910263003536585 9.374594597821862e-10 2.3798704340549647e-09" rpy="3.141592653589793 -1.5707963267948708 0" />
+            <geometry>
+                <mesh filename="meshes/wrist_front.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="wrist_front.stp_collision">
+            <origin xyz="-0.0003910263003536585 9.374594597821862e-10 2.3798704340549647e-09" rpy="3.141592653589793 -1.5707963267948708 0" />
+            <geometry>
+                <mesh filename="meshes/wrist_front.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="hand.stp">
+        <inertial>
+            <origin xyz="0.0014825256689256251 2.1656720394531805e-17 -0.0038411470758680987" rpy="0.0 -0.0 0.0" />
+            <mass value="0.0026384795696382953" />
+            <inertia ixx="1.0467566113624498e-07" iyy="8.912825043696853e-08" izz="1.8163144159374564e-08" ixy="4.845802808406454e-24" iyz="-3.8737475685860303e-23" ixz="3.912170964372392e-09" />
+        </inertial>
+        <visual name="hand.stp_visual">
+            <origin xyz="-2.615027483443555e-09 3.97504701456015e-18 -2.4782221341723697e-09" rpy="-6.180151558395416e-32 1.570796326794871 0" />
+            <geometry>
+                <mesh filename="meshes/hand.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="hand.stp_collision">
+            <origin xyz="-2.615027483443555e-09 3.97504701456015e-18 -2.4782221341723697e-09" rpy="-6.180151558395416e-32 1.570796326794871 0" />
+            <geometry>
+                <mesh filename="meshes/hand.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="tool.stp">
+        <inertial>
+            <origin xyz="-0.0017663433162739483 -1.2224538298438387e-15 4.511768736392696e-12" rpy="0.0 -0.0 0.0" />
+            <mass value="0.0004284301460377936" />
+            <inertia ixx="1.273542833229111e-09" iyy="9.745402972128955e-10" izz="9.977023322766234e-10" ixy="9.185314449022796e-23" iyz="4.2009948445479833e-22" ixz="1.1321774173430878e-54" />
+        </inertial>
+        <visual name="tool.stp_visual">
+            <origin xyz="4.960872903581048e-09 -1.5427390459096897e-17 4.511839790666272e-12" rpy="3.141592653589793 1.570796326794856 0" />
+            <geometry>
+                <mesh filename="meshes/tool.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="tool.stp_collision">
+            <origin xyz="4.960872903581048e-09 -1.5427390459096897e-17 4.511839790666272e-12" rpy="3.141592653589793 1.570796326794856 0" />
+            <geometry>
+                <mesh filename="meshes/tool.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="body.stp_body_shoulder" type="continuous">
+        <origin xyz="0.0 0.0 0.07969068" rpy="0.0 -0.0 0.0" />
+        <parent link="body.stp" />
+        <child link="shoulder.stp" />
+        <axis xyz="0.0 0.0 1.0" />
+    </joint>
+    <joint name="shoulder.stp_shoulder_elbow" type="continuous">
+        <origin xyz="0.042161489999999996 0.0 0.006513170000000006" rpy="0.0 -0.0 0.0" />
+        <parent link="shoulder.stp" />
+        <child link="elbow.stp" />
+        <axis xyz="0.0 0.0 1.0" />
+    </joint>
+    <joint name="elbow.stp_elbow_wrist_top" type="continuous">
+        <origin xyz="0.025628830000000002 0.0 0.003959189999999993" rpy="0.0 -0.0 0.0" />
+        <parent link="elbow.stp" />
+        <child link="wrist_top.stp" />
+        <axis xyz="0.0 0.0 1.0" />
+    </joint>
+    <joint name="wrist_top.stp_wrist_top_front" type="prismatic">
+        <origin xyz="0.015986699999999993 0.00141302 0.002609250000000003" rpy="3.141592653589793 -0.0 0.0" />
+        <parent link="wrist_top.stp" />
+        <child link="wrist_front.stp" />
+        <axis xyz="0.0 0.0 1.0" />
+        <limit lower="-0.017" upper="0.017" effort="1000000" velocity="1000000" />
+    </joint>
+    <joint name="wrist_front.stp_wrist_front_hand" type="continuous">
+        <origin xyz="0.001955150000000003 0.00141302 0.013733690000000003" rpy="3.141592653589793 -3.1554436208840472e-30 0.0" />
+        <parent link="wrist_front.stp" />
+        <child link="hand.stp" />
+        <axis xyz="1.0 1.9721522630525295e-31 0.0" />
+    </joint>
+    <joint name="hand.stp_hand_tool" type="fixed">
+        <origin xyz="0.001868540000000003 4.0431570003517606e-47 -0.01648739" rpy="3.141592653589793 -1.5707963267948966 0" />
+        <parent link="hand.stp" />
+        <child link="tool.stp" />
+    </joint>
+</robot>
