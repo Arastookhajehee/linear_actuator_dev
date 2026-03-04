@@ -1,52 +1,221 @@
 /*
-IBT-2 Motor Control Board driven by Arduino.
+IBT-2 Motor Control Board driven by Arduino Mega.
 
-The actuator follows a target position from a draw-wire sensor:
-- Sensor input on A3
-- Initial target value = 250
-- Target updated by serial input (0-1023, newline terminated)
+This sketch controls 4 linear actuators.
+Targets are updated by newline-delimited JSON over serial.
 */
 
-const int SENSOR_PIN = A3;
-const int RPWM_Output = 5;
-const int LPWM_Output = 6;
+#include <Arduino_JSON.h>
 
-int targetValue = 250;
+const int ACTUATOR_COUNT = 4;
+
+const int SENSOR_PINS[ACTUATOR_COUNT] = {A0, A1, A2, A3};
+const int RPWM_PINS[ACTUATOR_COUNT] = {2, 4, 6, 8};
+const int LPWM_PINS[ACTUATOR_COUNT] = {3, 5, 7, 9};
+const bool INVERT_DIRECTION[ACTUATOR_COUNT] = {false, false, false, false};
+
+int targetValues[ACTUATOR_COUNT] = {250, 250, 250, 250};
+int lastSensorValues[ACTUATOR_COUNT] = {0, 0, 0, 0};
+
 const int TARGET_DEADBAND = 30;
 const int DRIVE_PWM = 70;
-const bool invertDirection = false;
+const int MEDIAN_SAMPLES = 7;
 
 const unsigned long SAMPLE_INTERVAL_MS = 100;
 unsigned long lastSampleMs = 0;
 
-int lastSensorValue = 0;
-
-const int MEDIAN_SAMPLES = 7;
-const int SERIAL_BUFFER_LEN = 16;
-
+const int SERIAL_BUFFER_LEN = 256;
 char serialBuffer[SERIAL_BUFFER_LEN];
 int serialBufferIndex = 0;
 bool serialLineOverflow = false;
 
-void processTargetLine(const char *line)
-{
-  char *endPtr;
-  long parsedTarget = strtol(line, &endPtr, 10);
+long lastCommandId = 0;
 
-  while (*endPtr == ' ' || *endPtr == '\t')
+void stopMotor(int actuatorIndex)
+{
+  analogWrite(RPWM_PINS[actuatorIndex], 0);
+  analogWrite(LPWM_PINS[actuatorIndex], 0);
+}
+
+void stopAllMotors()
+{
+  for (int i = 0; i < ACTUATOR_COUNT; i++)
   {
-    endPtr++;
+    stopMotor(i);
+  }
+}
+
+int readMedianSensor(int sensorPin)
+{
+  int samples[MEDIAN_SAMPLES];
+
+  for (int i = 0; i < MEDIAN_SAMPLES; i++)
+  {
+    samples[i] = analogRead(sensorPin);
   }
 
-  if (line[0] == '\0' || *endPtr != '\0' || parsedTarget < 0 || parsedTarget > 1023)
+  for (int i = 1; i < MEDIAN_SAMPLES; i++)
   {
-    Serial.println("INVALID_TARGET");
+    int key = samples[i];
+    int j = i - 1;
+    while (j >= 0 && samples[j] > key)
+    {
+      samples[j + 1] = samples[j];
+      j--;
+    }
+    samples[j + 1] = key;
+  }
+
+  return samples[MEDIAN_SAMPLES / 2];
+}
+
+void driveTowardTarget(int actuatorIndex, int sensorValue)
+{
+  int error = targetValues[actuatorIndex] - sensorValue;
+
+  if (abs(error) <= TARGET_DEADBAND)
+  {
+    stopMotor(actuatorIndex);
     return;
   }
 
-  targetValue = (int)parsedTarget;
-  Serial.print("TARGET_SET ");
-  Serial.println(targetValue);
+  bool shouldDriveForward = (error > 0);
+  if (INVERT_DIRECTION[actuatorIndex])
+  {
+    shouldDriveForward = !shouldDriveForward;
+  }
+
+  if (shouldDriveForward)
+  {
+    analogWrite(LPWM_PINS[actuatorIndex], 0);
+    analogWrite(RPWM_PINS[actuatorIndex], DRIVE_PWM);
+  }
+  else
+  {
+    analogWrite(RPWM_PINS[actuatorIndex], 0);
+    analogWrite(LPWM_PINS[actuatorIndex], DRIVE_PWM);
+  }
+}
+
+void sampleSensorsAndDrive()
+{
+  for (int i = 0; i < ACTUATOR_COUNT; i++)
+  {
+    lastSensorValues[i] = readMedianSensor(SENSOR_PINS[i]);
+    driveTowardTarget(i, lastSensorValues[i]);
+  }
+}
+
+void sendTelemetry(long messageId)
+{
+  JSONVar response;
+  JSONVar sensorValues;
+  JSONVar linActs;
+
+  response["id"] = messageId;
+  for (int i = 0; i < ACTUATOR_COUNT; i++)
+  {
+    sensorValues[i] = lastSensorValues[i];
+    linActs[i] = targetValues[i];
+  }
+
+  response["sensor_values"] = sensorValues;
+  response["lin_acts"] = linActs;
+  Serial.println(JSON.stringify(response));
+}
+
+void sendError(long messageId, const char *errorCode)
+{
+  JSONVar response;
+  response["id"] = messageId;
+  response["error"] = errorCode;
+  Serial.println(JSON.stringify(response));
+}
+
+bool parseTargetsFromJson(const JSONVar &linActs, int parsedTargets[ACTUATOR_COUNT])
+{
+  if (JSON.typeof(linActs) != "array")
+  {
+    return false;
+  }
+
+  if ((int)linActs.length() != ACTUATOR_COUNT)
+  {
+    return false;
+  }
+
+  for (int i = 0; i < ACTUATOR_COUNT; i++)
+  {
+    JSONVar value = linActs[i];
+    String valueType = JSON.typeof(value);
+    if (valueType != "number")
+    {
+      return false;
+    }
+
+    double target = (double)value;
+    if (target < 0.0 || target > 1023.0)
+    {
+      return false;
+    }
+
+    parsedTargets[i] = (int)target;
+  }
+
+  return true;
+}
+
+void processMessageLine(const char *line)
+{
+  if (line[0] == '\0')
+  {
+    sendError(-1, "empty_message");
+    return;
+  }
+
+  JSONVar message = JSON.parse(line);
+  if (JSON.typeof(message) == "undefined")
+  {
+    sendError(-1, "invalid_json");
+    return;
+  }
+
+  if (!message.hasOwnProperty("id"))
+  {
+    sendError(-1, "invalid_id");
+    return;
+  }
+
+  JSONVar idValue = message["id"];
+  if (JSON.typeof(idValue) != "number")
+  {
+    sendError(-1, "invalid_id");
+    return;
+  }
+
+  long messageId = (long)((double)idValue);
+
+  if (!message.hasOwnProperty("lin_acts"))
+  {
+    sendError(messageId, "missing_lin_acts");
+    return;
+  }
+
+  int nextTargets[ACTUATOR_COUNT];
+  JSONVar linActs = message["lin_acts"];
+  if (!parseTargetsFromJson(linActs, nextTargets))
+  {
+    sendError(messageId, "invalid_lin_acts");
+    return;
+  }
+
+  for (int i = 0; i < ACTUATOR_COUNT; i++)
+  {
+    targetValues[i] = nextTargets[i];
+  }
+
+  lastCommandId = messageId;
+  sendTelemetry(lastCommandId);
 }
 
 void handleSerialInput()
@@ -64,12 +233,12 @@ void handleSerialInput()
     {
       if (serialLineOverflow)
       {
-        Serial.println("INVALID_TARGET");
+        sendError(-1, "input_overflow");
       }
       else
       {
         serialBuffer[serialBufferIndex] = '\0';
-        processTargetLine(serialBuffer);
+        processMessageLine(serialBuffer);
       }
 
       serialBufferIndex = 0;
@@ -93,74 +262,19 @@ void handleSerialInput()
   }
 }
 
-int readMedianSensor()
-{
-  int samples[MEDIAN_SAMPLES];
-
-  for (int i = 0; i < MEDIAN_SAMPLES; i++)
-  {
-    samples[i] = analogRead(SENSOR_PIN);
-  }
-
-  for (int i = 1; i < MEDIAN_SAMPLES; i++)
-  {
-    int key = samples[i];
-    int j = i - 1;
-    while (j >= 0 && samples[j] > key)
-    {
-      samples[j + 1] = samples[j];
-      j--;
-    }
-    samples[j + 1] = key;
-  }
-
-  return samples[MEDIAN_SAMPLES / 2];
-}
-
-void stopMotor()
-{
-  analogWrite(RPWM_Output, 0);
-  analogWrite(LPWM_Output, 0);
-}
-
-void driveTowardTarget(int sensorValue)
-{
-  int error = targetValue - sensorValue;
-
-  if (abs(error) <= TARGET_DEADBAND)
-  {
-    stopMotor();
-    return;
-  }
-
-  bool shouldDriveForward = (error > 0);
-  if (invertDirection)
-  {
-    shouldDriveForward = !shouldDriveForward;
-  }
-
-  if (shouldDriveForward)
-  {
-    analogWrite(LPWM_Output, 0);
-    analogWrite(RPWM_Output, DRIVE_PWM);
-  }
-  else
-  {
-    analogWrite(RPWM_Output, 0);
-    analogWrite(LPWM_Output, DRIVE_PWM);
-  }
-}
-
 void setup()
 {
   Serial.begin(9600);
-  pinMode(RPWM_Output, OUTPUT);
-  pinMode(LPWM_Output, OUTPUT);
 
-  stopMotor();
-  Serial.println("READY");
-  Serial.print("TARGET_SET ");
-  Serial.println(targetValue);
+  for (int i = 0; i < ACTUATOR_COUNT; i++)
+  {
+    pinMode(RPWM_PINS[i], OUTPUT);
+    pinMode(LPWM_PINS[i], OUTPUT);
+  }
+
+  stopAllMotors();
+  sampleSensorsAndDrive();
+  sendTelemetry(lastCommandId);
 }
 
 void loop()
@@ -174,7 +288,6 @@ void loop()
   }
 
   lastSampleMs = now;
-  lastSensorValue = readMedianSensor();
-
-  driveTowardTarget(lastSensorValue);
+  sampleSensorsAndDrive();
+  sendTelemetry(lastCommandId);
 }
