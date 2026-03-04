@@ -16,7 +16,7 @@ from pydantic import ValidationError
 from message import ErrorMessage, Message
 
 
-def parse_target_array(raw_input: str) -> List[float]:
+def parse_target_array(raw_input: str) -> List[int]:
     try:
         parsed = json.loads(raw_input)
     except json.JSONDecodeError as exc:
@@ -28,23 +28,25 @@ def parse_target_array(raw_input: str) -> List[float]:
     if len(parsed) != 4:
         raise ValueError("Exactly 4 target values are required.")
 
-    targets: List[float] = []
+    targets: List[int] = []
     for value in parsed:
         if isinstance(value, bool) or not isinstance(value, (int, float)):
             raise ValueError("Targets must be numbers in the range 0..1023.")
         target = float(value)
         if target < 0 or target > 1023:
             raise ValueError("Each target must be between 0 and 1023.")
-        targets.append(target)
+        targets.append(int(target))
 
     return targets
 
 
 def send_message(ser: serial.Serial, message: Message) -> None:
-    if hasattr(message, "model_dump_json"):
-        payload = message.model_dump_json()
-    else:
-        payload = message.json()
+    payload_object = {
+        "id": int(message.id),
+        "lin_acts": [int(value) for value in message.lin_acts],
+        "sensor_values": [float(value) for value in message.sensor_values],
+    }
+    payload = json.dumps(payload_object, separators=(",", ":"))
     ser.write(f"{payload}\n".encode("utf-8"))
     ser.flush()
     print(f"sent id={message.id} lin_acts={message.lin_acts}")
@@ -140,7 +142,7 @@ def main() -> None:
 
             command = Message(
                 id=next_message_id,
-                lin_acts=targets,
+                lin_acts=[float(value) for value in targets],
                 sensor_values=[0.0, 0.0, 0.0, 0.0],
             )
             send_message(ser, command)

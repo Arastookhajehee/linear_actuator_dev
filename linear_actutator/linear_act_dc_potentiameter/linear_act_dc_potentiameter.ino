@@ -6,6 +6,7 @@ Targets are updated by newline-delimited JSON over serial.
 */
 
 #include <Arduino_JSON.h>
+#include <stdlib.h>
 
 const int ACTUATOR_COUNT = 4;
 
@@ -134,34 +135,96 @@ void sendError(long messageId, const char *errorCode)
   Serial.println(JSON.stringify(response));
 }
 
-bool parseTargetsFromJson(const JSONVar &linActs, int parsedTargets[ACTUATOR_COUNT])
+bool parseJsonNumber(const JSONVar &value, double &parsedNumber)
 {
-  if (JSON.typeof(linActs) != "array")
+  String valueType = JSON.typeof(value);
+  if (valueType != "number" && valueType != "string")
   {
     return false;
   }
 
-  if ((int)linActs.length() != ACTUATOR_COUNT)
+  String numericText = JSON.stringify(value);
+  char *endPtr;
+  parsedNumber = strtod(numericText.c_str(), &endPtr);
+  if (endPtr == numericText.c_str() || *endPtr != '\0')
   {
     return false;
   }
+
+  return true;
+}
+
+bool parseTargetsFromJson(const JSONVar &linActs, int parsedTargets[ACTUATOR_COUNT])
+{
+  String linActsText = JSON.stringify(linActs);
+  if (linActsText.length() < 2)
+  {
+    return false;
+  }
+
+  if (linActsText[0] != '[' || linActsText[linActsText.length() - 1] != ']')
+  {
+    return false;
+  }
+
+  const char *cursor = linActsText.c_str() + 1;
+  char *endPtr;
 
   for (int i = 0; i < ACTUATOR_COUNT; i++)
   {
-    JSONVar value = linActs[i];
-    String valueType = JSON.typeof(value);
-    if (valueType != "number")
+    while (*cursor == ' ' || *cursor == '\t')
+    {
+      cursor++;
+    }
+
+    double target = strtod(cursor, &endPtr);
+    if (endPtr == cursor)
     {
       return false;
     }
 
-    double target = (double)value;
     if (target < 0.0 || target > 1023.0)
     {
       return false;
     }
 
     parsedTargets[i] = (int)target;
+
+    cursor = endPtr;
+    while (*cursor == ' ' || *cursor == '\t')
+    {
+      cursor++;
+    }
+
+    if (i < ACTUATOR_COUNT - 1)
+    {
+      if (*cursor != ',')
+      {
+        return false;
+      }
+      cursor++;
+    }
+  }
+
+  while (*cursor == ' ' || *cursor == '\t')
+  {
+    cursor++;
+  }
+
+  if (*cursor != ']')
+  {
+    return false;
+  }
+
+  cursor++;
+  while (*cursor == ' ' || *cursor == '\t')
+  {
+    cursor++;
+  }
+
+  if (*cursor != '\0')
+  {
+    return false;
   }
 
   return true;
@@ -189,13 +252,14 @@ void processMessageLine(const char *line)
   }
 
   JSONVar idValue = message["id"];
-  if (JSON.typeof(idValue) != "number")
+  double parsedId;
+  if (!parseJsonNumber(idValue, parsedId))
   {
     sendError(-1, "invalid_id");
     return;
   }
 
-  long messageId = (long)((double)idValue);
+  long messageId = (long)parsedId;
 
   if (!message.hasOwnProperty("lin_acts"))
   {
