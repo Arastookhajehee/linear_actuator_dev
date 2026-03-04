@@ -1,0 +1,6 @@
+ros2 pkg create --build-type ament_cmake agb_robot
+mkdir -p agb_robot/urdf agb_robot/meshes
+cp ../../simple_robot/simple_robot.urdf agb_robot/urdf/
+cp ../../simple_robot/meshes/* agb_robot/meshes/
+cd ../..
+

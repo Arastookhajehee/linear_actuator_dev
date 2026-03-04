@@ -1,0 +1,196 @@
+<robot name="agb_robot_260223">
+    <link name="base.stp">
+        <inertial>
+            <origin xyz="-0.2448752274131145 -1.0940827473739627 0.32487964508146816" rpy="0.0 0.0 0.0" />
+            <mass value="10019.064885648922" />
+            <inertia ixx="15508.852304755776" iyy="5497.279462800509" izz="18002.112810289836" ixy="4921.6697942223345" iyz="-76.05549966777198" ixz="38.77868094343046" />
+        </inertial>
+        <visual name="base.stp_visual">
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/base.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="base.stp_collision">
+            <origin xyz="0.0 0.0 0.0" rpy="0.0 0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/base.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="shoulder.stp">
+        <inertial>
+            <origin xyz="0.5183389257524779 -0.011747816548953958 0.6157591317046083" rpy="0.0 -0.0 0.0" />
+            <mass value="491.8487075119899" />
+            <inertia ixx="39.90446966169907" iyy="320.2798106483708" izz="299.3293833463449" ixy="-3.894032204392869" iyz="1.1357730010582614" ixz="-24.06121792690766" />
+        </inertial>
+        <visual name="shoulder.stp_visual">
+            <origin xyz="2.869806875210871e-18 -6.98689622658378e-18 -2.842170943040401e-16" rpy="0.0 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/shoulder.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="shoulder.stp_collision">
+            <origin xyz="2.869806875210871e-18 -6.98689622658378e-18 -2.842170943040401e-16" rpy="0.0 -0.0 0.0" />
+            <geometry>
+                <mesh filename="meshes/shoulder.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="upper_arm.stp">
+        <inertial>
+            <origin xyz="0.9198746981003137 -0.00042734109463356956 -0.02331433146205427" rpy="0.0 -0.0 0.0" />
+            <mass value="107.12283836710344" />
+            <inertia ixx="5.992864107080777" iyy="38.70929051095072" izz="33.58982147467361" ixy="0.01535262181984276" iyz="0.01205406593203566" ixz="-8.24081603706054" />
+        </inertial>
+        <visual name="upper_arm.stp_visual">
+            <origin xyz="4.0151769553631314e-09 4.085111224768153e-15 -4.995870028778882e-09" rpy="-3.388131770084307e-21 7.216449660063518e-16 3.155443550372074e-30" />
+            <geometry>
+                <mesh filename="meshes/upper_arm.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="upper_arm.stp_collision">
+            <origin xyz="4.0151769553631314e-09 4.085111224768153e-15 -4.995870028778882e-09" rpy="-3.388131770084307e-21 7.216449660063518e-16 3.155443550372074e-30" />
+            <geometry>
+                <mesh filename="meshes/upper_arm.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="lower_arm.stp">
+        <inertial>
+            <origin xyz="0.9838054115836997 0.02595271207576247 -0.04517226254036018" rpy="0.0 -0.0 0.0" />
+            <mass value="144.9583383435536" />
+            <inertia ixx="8.602879124185165" iyy="45.608521395929074" izz="37.336546507133335" ixy="-1.6281545426349204" iyz="-0.4722615887887329" ixz="-6.069453469421887" />
+        </inertial>
+        <visual name="lower_arm.stp_visual">
+            <origin xyz="4.0151883240469034e-09 9.586038044426307e-15 -4.995864912871184e-09" rpy="2.2985086056724255e-17 9.714451465470115e-17 1.1449174941436834e-16" />
+            <geometry>
+                <mesh filename="meshes/lower_arm.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="lower_arm.stp_collision">
+            <origin xyz="4.0151883240469034e-09 9.586038044426307e-15 -4.995864912871184e-09" rpy="2.2985086056724255e-17 9.714451465470115e-17 1.1449174941436834e-16" />
+            <geometry>
+                <mesh filename="meshes/lower_arm.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="slider.stp">
+        <inertial>
+            <origin xyz="-0.033176414384839745 -0.032899997215300875 0.3350300412841048" rpy="0.0 -0.0 0.0" />
+            <mass value="5.695129471114385" />
+            <inertia ixx="0.2792535153732558" iyy="0.27774861527967687" izz="0.0066177583225908165" ixy="8.353815294315226e-05" iyz="0.023494271393003974" ixz="-0.0009243134951404386" />
+        </inertial>
+        <visual name="slider.stp_visual">
+            <origin xyz="-0.06960000414460125 3.1113163423412973e-09 0.07129999898334291" rpy="-3.141592653589793 -2.692290834715965e-15 -1.0158540675320171e-14" />
+            <geometry>
+                <mesh filename="meshes/slider.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="slider.stp_collision">
+            <origin xyz="-0.06960000414460125 3.1113163423412973e-09 0.07129999898334291" rpy="-3.141592653589793 -2.692290834715965e-15 -1.0158540675320171e-14" />
+            <geometry>
+                <mesh filename="meshes/slider.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="upper_wrist.stp">
+        <inertial>
+            <origin xyz="0.005851063028342765 -0.049133509398442354 -0.06537613100135978" rpy="7.703719777548945e-34 -0.0 -6.077163357286273e-64" />
+            <mass value="8.643635335342676" />
+            <inertia ixx="0.07583394342761449" iyy="0.0366181304236477" izz="0.052780705840234685" ixy="0.005018163083988724" iyz="0.022510517542578035" ixz="-0.003649179238987459" />
+        </inertial>
+        <visual name="upper_wrist.stp_visual">
+            <origin xyz="2.379798615947948e-09 -4.963641231370275e-10 -3.6819405124788318e-09" rpy="3.1415926535896093 -7.245804199848267e-13 -1.570796326794897" />
+            <geometry>
+                <mesh filename="meshes/upper_wrist.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="upper_wrist.stp_collision">
+            <origin xyz="2.379798615947948e-09 -4.963641231370275e-10 -3.6819405124788318e-09" rpy="3.1415926535896093 -7.245804199848267e-13 -1.570796326794897" />
+            <geometry>
+                <mesh filename="meshes/upper_wrist.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="lower_wrist.stp">
+        <inertial>
+            <origin xyz="0.06711852484564304 0.11015866909345733 -0.015220701916053904" rpy="0.0 -0.0 0.0" />
+            <mass value="15.183184948675905" />
+            <inertia ixx="0.20412798347657457" iyy="0.08626593786596165" izz="0.25577250148131536" ixy="0.08294738977477281" iyz="0.023355611571627608" ixz="-0.012085548996532152" />
+        </inertial>
+        <visual name="lower_wrist.stp_visual">
+            <origin xyz="5.28517034581455e-10 4.04759276761979e-09 2.089773687430352e-09" rpy="1.570796326794897 3.4370332521234024e-14 1.5707963267950542" />
+            <geometry>
+                <mesh filename="meshes/lower_wrist.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="lower_wrist.stp_collision">
+            <origin xyz="5.28517034581455e-10 4.04759276761979e-09 2.089773687430352e-09" rpy="1.570796326794897 3.4370332521234024e-14 1.5707963267950542" />
+            <geometry>
+                <mesh filename="meshes/lower_wrist.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <link name="spray_cone.stp">
+        <inertial>
+            <origin xyz="-0.2468412413172976 1.2287132022947845e-09 -1.2197665455460083e-09" rpy="-3.1410993710982216e-79 -0.0 0.0" />
+            <mass value="107.00985806184539" />
+            <inertia ixx="1.2044624137665778" iyy="1.085264882879983" izz="1.0852648828796987" ixy="3.552713678800501e-15" iyz="-7.10542735760103e-14" ixz="1.0110655507256174e-14" />
+        </inertial>
+        <visual name="spray_cone.stp_visual">
+            <origin xyz="-1.9722457977877638e-09 1.2287128825505533e-09 -1.219768250848574e-09" rpy="3.1415926535897887 1.5707963267948473 0" />
+            <geometry>
+                <mesh filename="meshes/spray_cone.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </visual>
+        <collision name="spray_cone.stp_collision">
+            <origin xyz="-1.9722457977877638e-09 1.2287128825505533e-09 -1.219768250848574e-09" rpy="3.1415926535897887 1.5707963267948473 0" />
+            <geometry>
+                <mesh filename="meshes/spray_cone.stp.stl" scale="0.001 0.001 0.001" />
+            </geometry>
+        </collision>
+    </link>
+    <joint name="base.stp_base_to_shoulder" type="continuous">
+        <origin xyz="0.0 0.0 1.198" rpy="0.0 -0.0 0.0" />
+        <parent link="base.stp" />
+        <child link="shoulder.stp" />
+        <axis xyz="0.0 0.0 1.0" />
+    </joint>
+    <joint name="shoulder.stp_shoulder_to_upper_arm" type="continuous">
+        <origin xyz="1.83680278 0.0 1.0723390099999999" rpy="0.0 -0.0 0.0" />
+        <parent link="shoulder.stp" />
+        <child link="upper_arm.stp" />
+        <axis xyz="0.0 0.0 1.0" />
+    </joint>
+    <joint name="upper_arm.stp_upper_arm_to_lower_arm" type="continuous">
+        <origin xyz="1.59 0.0 0.1125" rpy="0.0 -0.0 1.5868204083817366e-46" />
+        <parent link="upper_arm.stp" />
+        <child link="lower_arm.stp" />
+        <axis xyz="0.0 0.0 1.0" />
+    </joint>
+    <joint name="lower_arm.stp_lower_arm_to_slider" type="prismatic">
+        <origin xyz="1.4961471800000004 0.09456639 0.020000060000000132" rpy="3.141592653589793 -0.0 -2.477754515798709e-32" />
+        <parent link="lower_arm.stp" />
+        <child link="slider.stp" />
+        <axis xyz="0.0 -3.0814879110195774e-33 1.0" />
+        <limit lower="-0.49" upper="0.345" effort="1000000" velocity="1000000" />
+    </joint>
+    <joint name="slider.stp_slider_to_upper_wrist" type="continuous">
+        <origin xyz="-0.03256011000000001 -0.09951192000000003 0.5460790900000001" rpy="-1.5707963267948966 -2.676517288555197e-63 8.685795193237065e-31" />
+        <parent link="slider.stp" />
+        <child link="upper_wrist.stp" />
+        <axis xyz="8.933570644816932e-31 -5.316746578530039e-18 0.9999999999999999" />
+    </joint>
+    <joint name="upper_wrist.stp_upper_wrist_to_lower_wrist" type="continuous">
+        <origin xyz="0.06754726999999947 -0.14259499000000006 -0.005673379999999994" rpy="-3.141592653589759 8.933570644816923e-31 2.0194839173657902e-28" />
+        <parent link="upper_wrist.stp" />
+        <child link="lower_wrist.stp" />
+        <axis xyz="-1.0 -1.0097419586828951e-28 -1.60268468754515e-14" />
+    </joint>
+    <joint name="lower_wrist.stp_lower_wrist_to_spray_cone" type="fixed">
+        <origin xyz="0.006653350000000273 0.3098670799999991 -0.022466130000010586" rpy="-1.5707963267948954 -3.4267309574098914e-14 -1.5707963267948966" />
+        <parent link="lower_wrist.stp" />
+        <child link="spray_cone.stp" />
+    </joint>
+</robot>

@@ -7,13 +7,20 @@ p.setGravity(0,0,-10)
 planeId = p.loadURDF("plane.urdf")
 cubeStartPos = [0,0,0]
 cubeStartOrientation = p.getQuaternionFromEuler([0,0,0])
-robotID = p.loadURDF("simple_robot.urdf",cubeStartPos, cubeStartOrientation, 
-                   # useMaximalCoordinates=1, ## New feature in Pybullet
-                   flags=p.URDF_USE_INERTIA_FROM_FILE)
+
+robotID = p.loadURDF(
+    "simple_robot.urdf",
+    cubeStartPos,
+    cubeStartOrientation,
+    useFixedBase=True,
+    flags=p.URDF_USE_INERTIA_FROM_FILE,
+)
+
 for i in range (10000):
     p.stepSimulation()
     time.sleep(1./240.)
 cubePos, cubeOrn = p.getBasePositionAndOrientation(robotID)
 print(cubePos,cubeOrn)
+input("press a key to close")
 p.disconnect()
 
