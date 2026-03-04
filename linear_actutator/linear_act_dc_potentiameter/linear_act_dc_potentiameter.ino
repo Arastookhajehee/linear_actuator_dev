@@ -9,12 +9,12 @@ Targets are updated by newline-delimited JSON over serial.
 
 const int ACTUATOR_COUNT = 4;
 
-const int SENSOR_PINS[ACTUATOR_COUNT] = {A0, A1, A2, A3};
+const int SENSOR_PINS[ACTUATOR_COUNT] = {A1, A2, A3, A4};
 const int RPWM_PINS[ACTUATOR_COUNT] = {2, 4, 6, 8};
 const int LPWM_PINS[ACTUATOR_COUNT] = {3, 5, 7, 9};
 const bool INVERT_DIRECTION[ACTUATOR_COUNT] = {false, false, false, false};
 
-int targetValues[ACTUATOR_COUNT] = {250, 250, 250, 250};
+int targetValues[ACTUATOR_COUNT] = {250, 260, 270, 280};
 int lastSensorValues[ACTUATOR_COUNT] = {0, 0, 0, 0};
 
 const int TARGET_DEADBAND = 30;
@@ -22,7 +22,9 @@ const int DRIVE_PWM = 70;
 const int MEDIAN_SAMPLES = 7;
 
 const unsigned long SAMPLE_INTERVAL_MS = 100;
+const unsigned long TELEMETRY_INTERVAL_MS = 1000;
 unsigned long lastSampleMs = 0;
+unsigned long lastTelemetryMs = 0;
 
 const int SERIAL_BUFFER_LEN = 256;
 char serialBuffer[SERIAL_BUFFER_LEN];
@@ -282,12 +284,16 @@ void loop()
   handleSerialInput();
 
   unsigned long now = millis();
-  if (now - lastSampleMs < SAMPLE_INTERVAL_MS)
+
+  if (now - lastSampleMs >= SAMPLE_INTERVAL_MS)
   {
-    return;
+    lastSampleMs = now;
+    sampleSensorsAndDrive();
   }
 
-  lastSampleMs = now;
-  sampleSensorsAndDrive();
-  sendTelemetry(lastCommandId);
+  if (now - lastTelemetryMs >= TELEMETRY_INTERVAL_MS)
+  {
+    lastTelemetryMs = now;
+    sendTelemetry(lastCommandId);
+  }
 }
