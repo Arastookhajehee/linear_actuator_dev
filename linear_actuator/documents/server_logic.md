@@ -12,5 +12,5 @@ Non-blocking read/write to serial port.
 
 ## Runtime Flow
 
-Thread 1: (in-memory model) main read/write ----- read-serial ---- read-model ---- write-serial ---- read ---- read ---- write ---- read ---- 
+Thread 1: (in-memory model) main read/write ----- read-serial ---- read-model ---- write-serial ---- read ---- read ---- write ---- read ---
 Thread 2: (read/write interface) secondary thread read ---- read ---- write-to-model ---- read-model ---- write-to-model

@@ -1,12 +1,12 @@
 # AGENTS.md
 
-Agent guidance for `C:\Users\akhaj\source\repos\agb\linear_actutator`.
+Agent guidance for `C:\Users\akhaj\source\repos\agb\linear_actuator`.
 
 ## Scope and Intent
 
 - This repository contains:
-- Arduino firmware in `linear_act_dc_potentiameter/linear_act_dc_potentiameter.ino`
-- A Python host utility in `linear_act_dc_potentiameter/keyboard_direction_serial.py`
+- Arduino firmware in `linear_act_dc_potentiometer/linear_act_dc_potentiometer.ino`
+- A Python host utility in `linear_act_dc_potentiometer/keyboard_direction_serial.py`
 - Project notes in `observations.md`, `project_plan.md`, and `TODO.md`
 - Main goal: safely drive a linear actuator toward a serial-configured target.
 
@@ -21,8 +21,8 @@ Agent guidance for `C:\Users\akhaj\source\repos\agb\linear_actutator`.
 
 ## Working Directories
 
-- Repo root: `C:\Users\akhaj\source\repos\agb\linear_actutator`
-- Firmware directory: `C:\Users\akhaj\source\repos\agb\linear_actutator\linear_act_dc_potentiameter`
+- Repo root: `C:\Users\akhaj\source\repos\agb\linear_actuator`
+- Firmware directory: `C:\Users\akhaj\source\repos\agb\linear_actuator\linear_act_dc_potentiometer`
 
 ## Build / Lint / Test Commands
 
@@ -39,9 +39,9 @@ Agent guidance for `C:\Users\akhaj\source\repos\agb\linear_actutator`.
 - Install AVR core (for Uno/Nano class boards):
 - `arduino-cli core install arduino:avr`
 - Compile firmware (Uno example):
-- `arduino-cli compile --fqbn arduino:avr:uno linear_act_dc_potentiameter`
+- `arduino-cli compile --fqbn arduino:avr:uno linear_act_dc_potentiometer`
 - Upload firmware (replace COM port):
-- `arduino-cli upload -p COM5 --fqbn arduino:avr:uno linear_act_dc_potentiameter`
+- `arduino-cli upload -p COM5 --fqbn arduino:avr:uno linear_act_dc_potentiometer`
 - Open serial monitor:
 - `arduino-cli monitor -p COM5 -c baudrate=9600`
 
@@ -53,15 +53,15 @@ Agent guidance for `C:\Users\akhaj\source\repos\agb\linear_actutator`.
 - Install dependency:
 - `pip install pyserial`
 - Run host script:
-- `python linear_act_dc_potentiameter/keyboard_direction_serial.py --port COM5 --baud 9600`
+- `python linear_act_dc_potentiometer/keyboard_direction_serial.py --port COM5 --baud 9600`
 
 ### Lint / Format (Python)
 
 - There is no enforced lint config currently, but preferred checks are:
-- `ruff check linear_act_dc_potentiameter`
-- `black --check linear_act_dc_potentiameter`
+- `ruff check linear_act_dc_potentiometer`
+- `black --check linear_act_dc_potentiometer`
 - Optional type check:
-- `mypy linear_act_dc_potentiameter/keyboard_direction_serial.py`
+- `mypy linear_act_dc_potentiometer/keyboard_direction_serial.py`
 - If tools are missing, install:
 - `pip install ruff black mypy`
 
