@@ -33,6 +33,40 @@ char serialBuffer[SERIAL_BUFFER_LEN];
 int serialBufferIndex = 0;
 bool serialLineOverflow = false;
 
+const bool DEBUG_SERIAL = true;
+
+void debugLog(const char *message)
+{
+  if (!DEBUG_SERIAL)
+  {
+    return;
+  }
+
+  Serial.print("DBG ");
+  Serial.println(message);
+}
+
+void debugTargets(const char *label, const int values[ACTUATOR_COUNT])
+{
+  if (!DEBUG_SERIAL)
+  {
+    return;
+  }
+
+  Serial.print("DBG ");
+  Serial.print(label);
+  Serial.print(" targets=[");
+  for (int i = 0; i < ACTUATOR_COUNT; i++)
+  {
+    Serial.print(values[i]);
+    if (i < ACTUATOR_COUNT - 1)
+    {
+      Serial.print(",");
+    }
+  }
+  Serial.println("]");
+}
+
 void stopMotor(int actuatorIndex)
 {
   analogWrite(RPWM_PINS[actuatorIndex], 0);
@@ -124,6 +158,7 @@ void sendTelemetry()
 
   response["actuators"] = actuators;
   Serial.println(JSON.stringify(response));
+  debugTargets("telemetry", targetValues);
 }
 
 void sendError(const char *errorCode)
@@ -131,6 +166,12 @@ void sendError(const char *errorCode)
   JSONVar response;
   response["error"] = errorCode;
   Serial.println(JSON.stringify(response));
+
+  if (DEBUG_SERIAL)
+  {
+    Serial.print("DBG error=");
+    Serial.println(errorCode);
+  }
 }
 
 bool parseJsonNumber(const JSONVar &value, double &parsedNumber)
@@ -156,11 +197,13 @@ bool parseTargetsFromJson(const JSONVar &actuators, int parsedTargets[ACTUATOR_C
 {
   if (JSON.typeof(actuators) != "array")
   {
+    debugLog("parseTargetsFromJson: actuators is not an array");
     return false;
   }
 
   if (JSON.typeof(actuators[ACTUATOR_COUNT]) != "undefined")
   {
+    debugLog("parseTargetsFromJson: actuators count is greater than 4");
     return false;
   }
 
@@ -171,29 +214,34 @@ bool parseTargetsFromJson(const JSONVar &actuators, int parsedTargets[ACTUATOR_C
     JSONVar actuator = actuators[i];
     if (JSON.typeof(actuator) != "object")
     {
+      debugLog("parseTargetsFromJson: actuator entry is not an object");
       return false;
     }
 
     if (!actuator.hasOwnProperty("id") || !actuator.hasOwnProperty("target"))
     {
+      debugLog("parseTargetsFromJson: missing id or target");
       return false;
     }
 
     double parsedId;
     if (!parseJsonNumber(actuator["id"], parsedId))
     {
+      debugLog("parseTargetsFromJson: invalid id value");
       return false;
     }
 
     int actuatorId = (int)parsedId;
     if (actuatorId < 1 || actuatorId > ACTUATOR_COUNT)
     {
+      debugLog("parseTargetsFromJson: actuator id out of range");
       return false;
     }
 
     int targetIndex = actuatorId - 1;
     if (seen[targetIndex])
     {
+      debugLog("parseTargetsFromJson: duplicate actuator id");
       return false;
     }
     seen[targetIndex] = true;
@@ -208,11 +256,13 @@ bool parseTargetsFromJson(const JSONVar &actuators, int parsedTargets[ACTUATOR_C
     double parsedTarget;
     if (!parseJsonNumber(targetValue, parsedTarget))
     {
+      debugLog("parseTargetsFromJson: target is not numeric or null");
       return false;
     }
 
     if (parsedTarget < 0.0 || parsedTarget > 1023.0)
     {
+      debugLog("parseTargetsFromJson: target out of range 0..1023");
       return false;
     }
 
@@ -223,6 +273,7 @@ bool parseTargetsFromJson(const JSONVar &actuators, int parsedTargets[ACTUATOR_C
   {
     if (!seen[i])
     {
+      debugLog("parseTargetsFromJson: missing at least one actuator id");
       return false;
     }
   }
@@ -232,6 +283,12 @@ bool parseTargetsFromJson(const JSONVar &actuators, int parsedTargets[ACTUATOR_C
 
 void processMessageLine(const char *line)
 {
+  if (DEBUG_SERIAL)
+  {
+    Serial.print("DBG received line: ");
+    Serial.println(line);
+  }
+
   if (line[0] == '\0')
   {
     sendError("empty_message");
@@ -268,6 +325,8 @@ void processMessageLine(const char *line)
   {
     targetValues[i] = nextTargets[i];
   }
+
+  debugTargets("applied", targetValues);
 
   sendTelemetry();
 }
@@ -319,6 +378,7 @@ void handleSerialInput()
 void setup()
 {
   Serial.begin(9600);
+  debugLog("setup start");
 
   for (int i = 0; i < ACTUATOR_COUNT; i++)
   {
@@ -328,7 +388,9 @@ void setup()
 
   stopAllMotors();
   sampleSensorsAndDrive();
+  debugTargets("startup", targetValues);
   sendTelemetry();
+  debugLog("setup complete");
 }
 
 void loop()

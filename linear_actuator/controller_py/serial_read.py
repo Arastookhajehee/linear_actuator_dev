@@ -8,6 +8,22 @@ from models import ThreadSafeActuatorState
 LOGGER = logging.getLogger(__name__)
 
 
+def _print_message_without_current(state: ActuatorState) -> None:
+    sanitized_payload: dict[str, list[dict[str, float | int | None]]] = {
+        "actuators": []
+    }
+
+    for actuator in state.actuators:
+        sanitized_payload["actuators"].append(
+            {
+                "id": actuator.id,
+                "target": actuator.target,
+            }
+        )
+
+    print(f"[serial] {json.dumps(sanitized_payload)}")
+
+
 def read_forever(ser, state_store: ThreadSafeActuatorState) -> None:
     while True:
         raw = ser.readline()
@@ -24,13 +40,14 @@ def read_forever(ser, state_store: ThreadSafeActuatorState) -> None:
             try:
                 payload = json.loads(line)
             except Exception:
-                LOGGER.debug("Ignored non-JSON serial line: %s", line)
+                print(f"[serial] {line}")
                 continue
 
             if isinstance(payload, dict) and "error" in payload:
-                LOGGER.warning("Arduino reported error: %s", payload.get("error"))
+                print(f"[serial][arduino-error] {payload}")
             else:
-                LOGGER.debug("Ignored JSON line with unexpected schema: %s", payload)
+                print(f"[serial] {payload}")
             continue
 
+        _print_message_without_current(state)
         state_store.update_currents_from_state(state)
