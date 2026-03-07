@@ -8,7 +8,7 @@ from pydantic import field_validator
 
 ACTUATOR_COUNT = 4
 FIRST_ACTUATOR_ID = 1
-DEFAULT_STARTUP_TARGET = 100.0
+DEFAULT_STARTUP_TARGET = 170.0
 
 
 class ActuatorData(BaseModel):

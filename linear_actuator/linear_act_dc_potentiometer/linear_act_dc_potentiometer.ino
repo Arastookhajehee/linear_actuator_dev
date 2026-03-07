@@ -16,7 +16,7 @@ const int LPWM_PINS[ACTUATOR_COUNT] = {3, 5, 7, 9};
 const bool INVERT_DIRECTION[ACTUATOR_COUNT] = {false, false, false, false};
 const int ACTUATOR_IDS[ACTUATOR_COUNT] = {1, 2, 3, 4};
 
-int targetValues[ACTUATOR_COUNT] = {100, 100, 100, 100};
+int targetValues[ACTUATOR_COUNT] = {70,70,70,70};
 int lastSensorValues[ACTUATOR_COUNT] = {0, 0, 0, 0};
 
 const int TARGET_DEADBAND = 30;

@@ -8,7 +8,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--port", required=True, help="Serial port, for example COM5")
     parser.add_argument("--baud", required=True, type=int, help="Serial baud rate")
     parser.add_argument("--api-host", default="127.0.0.1", help="FastAPI bind host")
-    parser.add_argument("--api-port", default=8000, type=int, help="FastAPI bind port")
+    parser.add_argument("--api-port", default=8008, type=int, help="FastAPI bind port")
     return parser.parse_args()
 
 
