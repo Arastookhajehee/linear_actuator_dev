@@ -1,25 +1,15 @@
 import json
-import logging
 
 from models import ActuatorState
 from models import ThreadSafeActuatorState
 
-
-LOGGER = logging.getLogger(__name__)
-
-
 def _print_message_without_current(state: ActuatorState) -> None:
-    sanitized_payload: dict[str, list[dict[str, float | int | None]]] = {
-        "actuators": []
+    sanitized_payload = {
+        "a1_target": state.a1_target,
+        "a2_target": state.a2_target,
+        "a3_target": state.a3_target,
+        "a4_target": state.a4_target,
     }
-
-    for actuator in state.actuators:
-        sanitized_payload["actuators"].append(
-            {
-                "id": actuator.id,
-                "target": actuator.target,
-            }
-        )
 
     print(f"[serial] {json.dumps(sanitized_payload)}")
 
