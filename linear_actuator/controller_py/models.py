@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import BaseModel
 
 
-DEFAULT_STARTUP_TARGET = 100.0
+DEFAULT_STARTUP_TARGET = 100
 
 
 class ActuatorState(BaseModel):
@@ -15,16 +15,16 @@ class ActuatorState(BaseModel):
     """
 
     a1_current: float | None = None
-    a1_target: float | None = DEFAULT_STARTUP_TARGET
+    a1_target: int | None = int(DEFAULT_STARTUP_TARGET)
 
     a2_current: float | None = None
-    a2_target: float | None = DEFAULT_STARTUP_TARGET
+    a2_target: int | None = int(DEFAULT_STARTUP_TARGET)
 
     a3_current: float | None = None
-    a3_target: float | None = DEFAULT_STARTUP_TARGET
+    a3_target: int | None = int(DEFAULT_STARTUP_TARGET)
 
     a4_current: float | None = None
-    a4_target: float | None = DEFAULT_STARTUP_TARGET
+    a4_target: int | None = int(DEFAULT_STARTUP_TARGET)
 
 
 class ThreadSafeActuatorState:

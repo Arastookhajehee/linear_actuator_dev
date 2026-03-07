@@ -7,7 +7,7 @@ import serial
 from models import ActuatorState
 from models import ThreadSafeActuatorState
 from serial_read import read_forever
-from serial_write import write_payload_json
+from serial_write import write_targets_csv
 
 
 LOGGER = logging.getLogger(__name__)
@@ -43,14 +43,13 @@ def build_app(serial_port: str, baud_rate: int) -> FastAPI:
         # Optimistic server truth: update server state first.
         state_store.replace_state(state)
 
-        payload = state.model_dump_json()
         ser = getattr(app.state, "serial", None)
         if ser is None or not ser.is_open:
             LOGGER.warning("Serial connection unavailable; state updated server-side only")
             return state_store.snapshot()
 
         try:
-            write_payload_json(ser, payload)
+            write_targets_csv(ser, state)
         except Exception:
             LOGGER.exception("Failed to write actuator state to serial")
 
