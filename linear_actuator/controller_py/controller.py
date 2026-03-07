@@ -1,14 +1,16 @@
+import logging
 import threading
 
 from fastapi import FastAPI
-from fastapi import HTTPException
 import serial
-import uvicorn
 
 from models import ActuatorState
 from models import ThreadSafeActuatorState
 from serial_read import read_forever
-from serial_write import write_full_state
+from serial_write import write_payload_json
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def build_app(serial_port: str, baud_rate: int) -> FastAPI:
@@ -38,15 +40,19 @@ def build_app(serial_port: str, baud_rate: int) -> FastAPI:
 
     @app.post("/actuators", response_model=ActuatorState)
     def post_actuators(state: ActuatorState) -> ActuatorState:
+        # Optimistic server truth: update server state first.
         state_store.replace_state(state)
+
+        payload = state.model_dump_json()
         ser = getattr(app.state, "serial", None)
         if ser is None or not ser.is_open:
-            raise HTTPException(status_code=503, detail="serial connection not available")
+            LOGGER.warning("Serial connection unavailable; state updated server-side only")
+            return state_store.snapshot()
 
         try:
-            write_full_state(ser, state_store)
-        except Exception as exc:
-            raise HTTPException(status_code=500, detail=str(exc)) from exc
+            write_payload_json(ser, payload)
+        except Exception:
+            LOGGER.exception("Failed to write actuator state to serial")
 
         return state_store.snapshot()
 
@@ -55,4 +61,5 @@ def build_app(serial_port: str, baud_rate: int) -> FastAPI:
 
 def start(serial_port: str, baud_rate: int, host: str, api_port: int) -> None:
     app = build_app(serial_port=serial_port, baud_rate=baud_rate)
-    uvicorn.run(app, host=host, port=api_port)
+    uvicorn_module = __import__("uvicorn")
+    uvicorn_module.run(app, host=host, port=api_port)

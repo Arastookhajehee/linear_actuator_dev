@@ -160,6 +160,29 @@ class ThreadSafeActuatorState:
         parsed_state = ActuatorState.model_validate_json(payload)
         self.replace_state(parsed_state)
 
+    def update_currents_from_state(self, incoming_state: ActuatorState) -> None:
+        """Update only actuator current values from telemetry.
+
+        Server-side target values remain the source of truth and are not
+        overwritten by Arduino telemetry.
+        """
+
+        with self._lock:
+            current_by_id: dict[int, float | None] = {}
+
+            for incoming_actuator in incoming_state.actuators:
+                if incoming_actuator.id is None:
+                    continue
+
+                current_by_id[incoming_actuator.id] = incoming_actuator.current
+
+            for actuator in self._state.actuators:
+                if actuator.id is None:
+                    continue
+
+                if actuator.id in current_by_id:
+                    actuator.current = current_by_id[actuator.id]
+
     def snapshot(self) -> ActuatorState:
         with self._lock:
             return self._state.model_copy(deep=True)
