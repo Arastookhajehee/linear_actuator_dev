@@ -23,8 +23,8 @@ const int RPWM_PINS[ACTUATOR_COUNT] = {2, 4, 6, 8};
 const int LPWM_PINS[ACTUATOR_COUNT] = {3, 5, 7, 9};
 const bool INVERT_DIRECTION[ACTUATOR_COUNT] = {false, false, false, false};
 
-const int DEFAULT_TARGET = 100;
-const int TARGET_DEADBAND = 30;
+const int DEFAULT_TARGET = 50;
+const int TARGET_DEADBAND = 10;
 const int DRIVE_PWM = 70;
 const int MEDIAN_SAMPLES = 7;
 
@@ -38,9 +38,9 @@ bool serialLineOverflow = false;
 
 int targetValues[ACTUATOR_COUNT] = {
   DEFAULT_TARGET,
-  DEFAULT_TARGET+ 20,
-  DEFAULT_TARGET+ 40,
-  DEFAULT_TARGET+ 60,
+  DEFAULT_TARGET,
+  DEFAULT_TARGET,
+  DEFAULT_TARGET,
 };
 
 int currentValues[ACTUATOR_COUNT] = {0, 0, 0, 0};
