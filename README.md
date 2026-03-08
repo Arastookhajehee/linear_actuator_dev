@@ -4,59 +4,44 @@ This folder contains an Arduino + Python workflow for controlling a linear actua
 
 ## What is here
 
-- `linear_act_dc_potentiometer/linear_act_dc_potentiometer.ino`: Main Arduino control loop.
-- `linear_act_dc_potentiometer/keyboard_direction_serial.py`: Python CLI to send target values over serial.
-- `linear_act_dc_potentiometer/ref_images/`: Wiring and reference images.
-- `observations.md`: Testing notes and links.
+- Main Arduino control loop.
+- Python controller to send target values over serial.
+- Wiring and reference images (to be updated)
 
 ## Current control behavior
 
-- Sensor input: `A3`.
-- Motor PWM pins: `RPWM=5`, `LPWM=6`.
-- Target is runtime-configurable over serial (newline-terminated integer).
+### [controller Data Flow Diagram](./linear_actuator/linear_act_dc_potentiometer/data_flow_diagram.png)
+
 - Valid target range: `0..1023`.
-- Initial target at boot: `250`.
-- Deadband around target: `30` ADC counts.
+- Initial target at boot: `50`.
+- Deadband around target: `10` ADC counts.
 - Drive power: `DRIVE_PWM = 70`.
 - Sampling interval: `100 ms`.
 - Filtering: 7-sample median (`MEDIAN_SAMPLES = 7`) to reduce noise.
 
 ## Serial protocol
 
-Send from host to Arduino:
+1. Install the `https://github.com/arduino-libraries/Arduino_JSON` library.
+   1.1 The package is available via the Arduino IDE Package manager.
+2. Verify and upload code to Arduino Mega as usual.
 
-- `"<number>\n"` where number is `0..1023`.
+## How to run python linear actuator controller
 
-Arduino responses:
+1. Open and upload `linear_actuator\linear_act_dc_potentiometer\linear_act_dc_potentiometer.ino` to the Arduino.
+2. Activate/create python virtual environment `venv`
+3. Install Python dependencies:
+   3.1 `pip install -r ./venv_requirements.txt`
+4. Run the controller script (replace COM port depending on the arduino IDE detected port):
+   4.1 `python linear_actuator\controller_py\main.py --port COM5`
+5. From a REST http client (Ex. [Postman](https://www.postman.com/) or custom component) send GET/POST requests to the `{server_url}/actuators`
+   5.1 GET: (no body) -> returns current status of the controller and linear actuators
+   5.2 POST: (JSON body) -> sets linear actuator new targets
 
-- `READY` on startup.
-- `TARGET_SET <value>` when a target is accepted.
-- `INVALID_TARGET` when input is malformed/out of range.
-
-## How to run
-
-1. Open and upload `linear_act_dc_potentiometer/linear_act_dc_potentiometer.ino` to the Arduino.
-2. Install Python dependency:
-   - `pip install pyserial`
-3. Run the sender script (replace COM port depending on the arduino IDE detected port):
-   - `python linear_act_dc_potentiometer/keyboard_direction_serial.py --port COM5`
-4. At prompt `target>`, enter a number and press Enter.
-5. Enter `q` to quit.
-
-## Tuning guide
-
-For faster movement:
-
-- Increase `DRIVE_PWM`.
-- Decrease `SAMPLE_INTERVAL_MS`.
-
-For less noisy motion:
-
-- Keep/increase `MEDIAN_SAMPLES` (costs response speed).
-- Increase `TARGET_DEADBAND` slightly if oscillating near setpoint.
-
-## Known limitations
-
-- Control is bang-bang (full on/off), not PID.
-- No hard-limit switch handling in code.
-- Behavior depends on wiring polarity; toggle `invertDirection` if direction is reversed.
+      ``` JSON
+      {
+          "a1_target": 30.0,
+          "a2_target": 50.0,
+          "a3_target": 90.0,
+          "a4_target": 120.0
+      }
+      ```
