@@ -10,7 +10,7 @@ This folder contains an Arduino + Python workflow for controlling a linear actua
 
 ## Current control behavior
 
-### [controller Data Flow Diagram](./linear_actuator/linear_act_dc_potentiometer/data_flow_diagram.png)
+![controller Data Flow Diagram](./linear_actuator/linear_act_dc_potentiometer/data_flow_diagram.png)
 
 - Valid target range: `0..1023`.
 - Initial target at boot: `50`.
