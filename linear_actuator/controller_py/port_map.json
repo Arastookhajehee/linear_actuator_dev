@@ -1,0 +1,42 @@
+{
+    "API00": {
+        "com_port": "COM1",
+        "api_port": 7500
+    },
+    "API01": {
+        "com_port": "COM2",
+        "api_port": 7501
+    },
+    "API02": {
+        "com_port": "COM3",
+        "api_port": 7502
+    },
+    "API03": {
+        "com_port": "COM4",
+        "api_port": 7503
+    },
+    "API04": {
+        "com_port": "COM5",
+        "api_port": 7504
+    },
+    "API10": {
+        "com_port": "COM6",
+        "api_port": 7510
+    },
+    "API11": {
+        "com_port": "COM7",
+        "api_port": 7511
+    },
+    "API12": {
+        "com_port": "COM8",
+        "api_port": 7512
+    },
+    "API13": {
+        "com_port": "COM9",
+        "api_port": 7513
+    },
+    "API14": {
+        "com_port": "COM10",
+        "api_port": 7514
+    }
+}
