@@ -4,7 +4,7 @@ from typing import Any
 from pydantic import BaseModel
 
 
-DEFAULT_STARTUP_TARGET = 100
+DEFAULT_STARTUP_TARGET = 50
 
 
 class ActuatorState(BaseModel):

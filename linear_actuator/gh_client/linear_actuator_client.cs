@@ -12,12 +12,11 @@ public class Script_Instance : GH_ScriptInstance
 {
     private void RunScript(
         string url,
-        List<double> targets,
+        List<int> targets,
         bool submit,
         ref object a,
         ref object b,
-        ref object c
-    )
+        ref object c)
     {
         if (!submit)
         {
@@ -79,3 +78,4 @@ public class Script_Instance : GH_ScriptInstance
         return ((int)response.StatusCode, responseBody);
     }
 }
+
