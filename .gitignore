@@ -42,3 +42,7 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
+
+# rhino backup and lock files
+*.3dmbak
+*.rhl
