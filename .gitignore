@@ -8,6 +8,8 @@ __pycache__/
 venv_robot/
 env_robot/
 ENV_robot/
+wsl_venv/
+.wsl_venv/
 
 .venv/
 venv/
