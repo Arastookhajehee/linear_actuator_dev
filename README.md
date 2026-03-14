@@ -31,16 +31,33 @@ This folder contains an Arduino + Python workflow for controlling a linear actua
 2. Activate/create python virtual environment `venv`
 3. Install Python dependencies:
    - `pip install -r ./venv_requirements.txt`
-4. Run the controller script (replace COM port depending on the arduino IDE detected port):
-   - `python linear_actuator\controller_py\main.py --port COM5`
-5. From a REST http client (Ex. [Postman](https://www.postman.com/) or custom component) send GET/POST requests to the `{server_url}/actuators`
-   - GET: (no body) -> returns current status of the controller and linear actuators
-   - POST: (JSON body) -> sets linear actuator new targets
+4. Run one controller server (serial mode).
+   - Default serial baud is `9600` (matches Arduino `Serial.begin(9600)`).
+   - Example: `python linear_actuator\controller_py\main.py --port COM5`
+   - Optional: override bind host/port and baud:
+     - `python linear_actuator\controller_py\main.py --port COM5 --baud 9600 --api-host 127.0.0.1 --api-port 7500`
+5. Or run one API test-only server (no Arduino/serial):
+   - `python linear_actuator\controller_py\main.py --api-test-only --api-port 7500`
+   - `--rest-test` is still supported as an alias.
+6. Or launch all mapped servers from `linear_actuator\controller_py\port_map.json`:
+   - Serial mode: `python linear_actuator\controller_py\start_mapped_servers.py`
+   - API test-only mode: `python linear_actuator\controller_py\start_mapped_servers.py --api-test-only`
+   - Launch a subset: `python linear_actuator\controller_py\start_mapped_servers.py --only API00 API01`
+7. Optional cleanup script for mapped API ports:
+   - `powershell -ExecutionPolicy Bypass -File linear_actuator\controller_py\kill_mapped_ports.ps1`
+
+## REST endpoints
+
+- `GET /actuators` -> returns current actuator state JSON
+- `POST /actuators` -> updates actuator targets (and returns current state)
+
+POST body example:
 
 ```json
 {
-    "a1_target": 30.0,
-    "a2_target": 50.0,
-    "a3_target": 90.0,
-    "a4_target": 120.0
+  "a1_target": 30,
+  "a2_target": 50,
+  "a3_target": 90,
+  "a4_target": 120
 }
+```
