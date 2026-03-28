@@ -48,3 +48,6 @@ Thumbs.db
 # rhino backup and lock files
 *.3dmbak
 *.rhl
+
+# large file footage
+footage/
