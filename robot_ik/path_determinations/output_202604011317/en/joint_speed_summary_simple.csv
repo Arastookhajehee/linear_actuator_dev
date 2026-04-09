@@ -1,0 +1,7 @@
+joint_name,joint_type,joint_speed_unit,joint_position_limit_min,joint_position_limit_max,path_max_required_joint_speed,path_p95_required_joint_speed
+base.stp_base_to_shoulder,revolute,rad/s,-1.57,1.57,0.67,0.38
+shoulder.stp_shoulder_to_upper_arm,revolute,rad/s,-1.75,1.75,0.98,0.34
+upper_arm.stp_upper_arm_to_lower_arm,revolute,rad/s,-1.57,1.57,0.50,0.28
+lower_arm.stp_lower_arm_to_slider,prismatic,m/s,-0.49,0.34,0.29,0.07
+slider.stp_slider_to_upper_wrist,revolute,rad/s,-3.14,3.14,0.70,0.38
+upper_wrist.stp_upper_wrist_to_lower_wrist,revolute,rad/s,-1.92,1.92,0.67,0.24

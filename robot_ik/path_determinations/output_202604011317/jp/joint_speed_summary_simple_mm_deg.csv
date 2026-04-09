@@ -1,0 +1,7 @@
+ジョイント名,ジョイントタイプ,ジョイント速度単位,ジョイント位置下限,ジョイント位置上限,経路で必要な最大ジョイント速度,経路で必要な95パーセンタイルジョイント速度
+base.stp_base_to_shoulder,回転,degree/s,-90.00,90.00,38.24,21.78
+shoulder.stp_shoulder_to_upper_arm,回転,degree/s,-100.00,100.00,56.03,19.41
+upper_arm.stp_upper_arm_to_lower_arm,回転,degree/s,-90.00,90.00,28.50,15.95
+lower_arm.stp_lower_arm_to_slider,直動,mm/s,-490.00,345.00,294.21,71.08
+slider.stp_slider_to_upper_wrist,回転,degree/s,-180.00,180.00,40.26,22.02
+upper_wrist.stp_upper_wrist_to_lower_wrist,回転,degree/s,-110.00,110.00,38.24,13.84
