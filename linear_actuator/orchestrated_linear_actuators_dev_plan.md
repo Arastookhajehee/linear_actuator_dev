@@ -15,7 +15,13 @@
 | Node                 | Set of 4 Linear Actuators controlled by the same `Serial Python Server`         |
 | Serial Python Server | Python Server that controls 4 linear actuator via one Serial port               |
 
+> Note
+> **ALWAYS** Save your conversation with AI models as a markdown file
+> when using `opencode` the command is `/export`
+
 ## Milestones
+
+The following is the list of tasks/milestones we need to finish
 
 ### 1. Pending Assembly Work
 
