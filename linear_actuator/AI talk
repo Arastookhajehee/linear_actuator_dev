@@ -1,0 +1,58 @@
+User requested to merge two Arduino programs: the communication-based controller in linear_act_dc_potentiometer.ino and the calibration/test program in PID controller/senser test.ino.
+
+Discussion and actions:
+- Read both files and analyzed their structure.
+- Updated the test program serial interface to support more standard commands and JSON status output.
+- Advised that the fusion should keep the communication program as the main body and integrate:
+  - automatic calibration flow
+  - ADC-to-position mapping
+  - EEPROM calibration storage
+  - position control logic
+- Noted that the test program currently supports only one channel, while the communication program supports four channels.
+- Recommended either:
+  1. fuse into a single-axis communication program first, or
+  2. extend to 4-axis with per-axis calibration and mapping.
+- The user then asked to export this fusion discussion to the AI talk file.
+
+=== Serial communication protocol standard (current implementation) / 串口通讯协议标准（当前实现） ===
+
+Incoming command from host to controller / 上位机发给控制器的指令：
+- Format / 格式：T,<a1_target>,<a2_target>,<a3_target>,<a4_target>
+- Example / 示例：T,100,200,300,400
+- Rules / 规则：
+  - Must start with T, / 必须以 T, 开头
+  - Must contain exactly 4 integer target values / 必须包含 4 个整数目标值
+  - Values must be separated by commas / 数值之间用英文逗号分隔
+  - Each value must be between 0 and 1023 / 每个数值范围为 0 到 1023
+  - No extra characters are allowed / 不允许有额外字符
+  - Line ending is newline; carriage return is ignored / 行结束使用换行符，回车会被忽略
+
+Telemetry response from controller to host / 控制器发给上位机的状态反馈：
+- Format / 格式：single-line JSON
+- Example / 示例：
+  {"a1_current":123,"a1_target":100,"a2_current":456,"a2_target":200,"a3_current":789,"a3_target":300,"a4_current":321,"a4_target":400}
+- Notes / 说明：
+  - The controller sends current positions and target positions for all 4 axes / 控制器会发送 4 轴的当前值和目标值
+  - Each message is terminated with a newline / 每条消息以换行符结束
+
+Error response standard / 错误响应标准：
+- Format / 格式：{"error":"<error_code>"}
+- Example / 示例：{"error":"invalid_command"}
+- Common error codes / 常见错误码：
+  - empty_message / 空消息
+  - invalid_command / 无效指令格式
+  - input_overflow / 输入缓存溢出
+
+Parsing and error handling rules / 解析与报错规则：
+- Empty line -> return empty_message / 空行 -> 返回 empty_message
+- Wrong prefix, wrong number of values, non-numeric values, out-of-range values, or extra characters -> return invalid_command / 前缀错误、值个数错误、非数字、超出范围、额外字符 -> 返回 invalid_command
+- Buffer overflow while receiving serial data -> return input_overflow / 串口接收缓存溢出 -> 返回 input_overflow
+- Valid command -> apply new targets and send telemetry / 合法指令 -> 更新目标值并返回遥测数据
+
+
+我现在想在这个主程序中添加几个功能。1，速度设定，默认速度为200，可以通过接收S，<a1_speed>,<a2_speed>,<a3_speed>,<a4_speed>，来控制各个驱动器的速度。。2.添加自动标定传感器行程的功能，参照senser test来制作标定程序段。接收指令calibration start开始校准流程，，calibration brak中断校准流程，，calibration clear清除当前储存的校准信息，并且重新加载默认校准参数，，默认参数为：CAL_RAW_AT_0=3
+CAL_RAW_AT_800=812
+CAL_RAW_SPAN=809
+CAL_RPWM_IS_EXTEND=1
+CAL_ZERO_IS_LOW_SENSOR=1
+FORMULA: pos_mm = clamp((raw - RAW_AT_0) * 800 / (RAW_AT_800 - RAW_AT_0), 0, 800)，，，之后的传感器的读数和实际行程对应全部依赖于这个校准，，校准逻辑是：线性驱动器最大行程是800，两端有自动停止的微动开关，所以可以分别移动到两端的极限，然后

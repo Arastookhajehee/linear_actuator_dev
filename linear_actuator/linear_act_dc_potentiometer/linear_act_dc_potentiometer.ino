@@ -22,11 +22,17 @@ const int SENSOR_PINS[ACTUATOR_COUNT] = {A1, A2, A3, A4};
 const int RPWM_PINS[ACTUATOR_COUNT] = {2, 4, 6, 8};
 const int LPWM_PINS[ACTUATOR_COUNT] = {3, 5, 7, 9};
 const bool INVERT_DIRECTION[ACTUATOR_COUNT] = {false, false, false, false};
+const bool ACTUATOR_ENABLED[ACTUATOR_COUNT] = {true, true, true, true};
 
-const int DEFAULT_TARGET = 50;
-const int TARGET_DEADBAND = 10;
-const int DRIVE_PWM = 70;
+const int DEFAULT_TARGET = 100;
+const int TARGET_DEADBAND = 1;
+const int DRIVE_PWM = 200;
 const int MEDIAN_SAMPLES = 7;
+const int CALIBRATION_PWM = 255;
+const unsigned long CALIBRATION_DURATION_MS = 3000;
+const unsigned long CALIBRATION_DELAY_MS = 200;
+const int CALIBRATION_SENSOR_DELTA_THRESHOLD = 1;
+const int CALIBRATION_PASSES = 2;
 
 const unsigned long SAMPLE_INTERVAL_MS = 100;
 const unsigned long TELEMETRY_INTERVAL_MS = 1000;
@@ -44,6 +50,7 @@ int targetValues[ACTUATOR_COUNT] = {
 };
 
 int currentValues[ACTUATOR_COUNT] = {0, 0, 0, 0};
+bool sensorIncreasesWithRPWM[ACTUATOR_COUNT] = {false, false, false, false};
 
 unsigned long lastSampleMs = 0;
 unsigned long lastTelemetryMs = 0;
@@ -84,8 +91,18 @@ void debugTargets(const char *label)
   Serial.println("]");
 }
 
+bool isActuatorConfigured(int actuatorIndex)
+{
+  return ACTUATOR_ENABLED[actuatorIndex];
+}
+
 void stopMotor(int actuatorIndex)
 {
+  if (!isActuatorConfigured(actuatorIndex))
+  {
+    return;
+  }
+
   analogWrite(RPWM_PINS[actuatorIndex], 0);
   analogWrite(LPWM_PINS[actuatorIndex], 0);
 }
@@ -124,8 +141,150 @@ int readMedianSensor(int sensorPin)
   return samples[MEDIAN_SAMPLES / 2];
 }
 
+void driveActuator(int actuatorIndex, bool useRPWM, int pwm)
+{
+  if (!isActuatorConfigured(actuatorIndex))
+  {
+    return;
+  }
+
+  if (useRPWM)
+  {
+    analogWrite(LPWM_PINS[actuatorIndex], 0);
+    analogWrite(RPWM_PINS[actuatorIndex], pwm);
+    return;
+  }
+
+  analogWrite(RPWM_PINS[actuatorIndex], 0);
+  analogWrite(LPWM_PINS[actuatorIndex], pwm);
+}
+
+bool calibrateActuatorDirection(int actuatorIndex)
+{
+  if (!isActuatorConfigured(actuatorIndex))
+  {
+    if (DEBUG_SERIAL)
+    {
+      Serial.print("DBG actuator ");
+      Serial.print(actuatorIndex);
+      Serial.println(" skipped: not configured");
+    }
+    return false;
+  }
+
+  int cumulativeRPWMTrend = 0;
+  int cumulativeLPWMTrend = 0;
+
+  for (int pass = 0; pass < CALIBRATION_PASSES; pass++)
+  {
+    int lastSample = readMedianSensor(SENSOR_PINS[actuatorIndex]);
+    int minObserved = lastSample;
+    int maxObserved = lastSample;
+
+    unsigned long startMs = millis();
+    driveActuator(actuatorIndex, true, CALIBRATION_PWM);
+    while (millis() - startMs < CALIBRATION_DURATION_MS)
+    {
+      int sample = readMedianSensor(SENSOR_PINS[actuatorIndex]);
+      if (sample < minObserved) minObserved = sample;
+      if (sample > maxObserved) maxObserved = sample;
+      delay(20);
+    }
+    stopMotor(actuatorIndex);
+    delay(CALIBRATION_DELAY_MS);
+    cumulativeRPWMTrend += (maxObserved - minObserved);
+
+    lastSample = readMedianSensor(SENSOR_PINS[actuatorIndex]);
+    minObserved = lastSample;
+    maxObserved = lastSample;
+
+    startMs = millis();
+    driveActuator(actuatorIndex, false, CALIBRATION_PWM);
+    while (millis() - startMs < CALIBRATION_DURATION_MS)
+    {
+      int sample = readMedianSensor(SENSOR_PINS[actuatorIndex]);
+      if (sample < minObserved) minObserved = sample;
+      if (sample > maxObserved) maxObserved = sample;
+      delay(20);
+    }
+    stopMotor(actuatorIndex);
+    delay(CALIBRATION_DELAY_MS);
+    cumulativeLPWMTrend += (maxObserved - minObserved);
+  }
+
+  int rpwmTrend = cumulativeRPWMTrend / CALIBRATION_PASSES;
+  int lpwmTrend = cumulativeLPWMTrend / CALIBRATION_PASSES;
+
+  bool increasesWithRPWM = false;
+  if (abs(rpwmTrend) >= CALIBRATION_SENSOR_DELTA_THRESHOLD)
+  {
+    increasesWithRPWM = (rpwmTrend > 0);
+  }
+  else if (abs(lpwmTrend) >= CALIBRATION_SENSOR_DELTA_THRESHOLD)
+  {
+    increasesWithRPWM = (lpwmTrend < 0);
+  }
+  else
+  {
+    debugLog("calibration no clear change");
+  }
+
+  sensorIncreasesWithRPWM[actuatorIndex] = increasesWithRPWM;
+
+  if (DEBUG_SERIAL)
+  {
+    Serial.print("DBG cal actuator ");
+    Serial.print(actuatorIndex);
+    Serial.print(" rpwm_trend=");
+    Serial.print(rpwmTrend);
+    Serial.print(" lpwm_trend=");
+    Serial.print(lpwmTrend);
+    Serial.print(" increases_with_rpwm=");
+    Serial.println(increasesWithRPWM ? 1 : 0);
+  }
+
+  return true;
+}
+
+void calibrateActuatorDirections()
+{
+  debugLog("starting direction calibration");
+  stopAllMotors();
+
+  for (int pass = 0; pass < CALIBRATION_PASSES; pass++)
+  {
+    for (int i = 0; i < ACTUATOR_COUNT; i++)
+    {
+      driveActuator(i, true, CALIBRATION_PWM);
+    }
+    delay(CALIBRATION_DURATION_MS);
+    stopAllMotors();
+    delay(CALIBRATION_DELAY_MS);
+
+    for (int i = 0; i < ACTUATOR_COUNT; i++)
+    {
+      driveActuator(i, false, CALIBRATION_PWM);
+    }
+    delay(CALIBRATION_DURATION_MS);
+    stopAllMotors();
+    delay(CALIBRATION_DELAY_MS);
+  }
+
+  for (int i = 0; i < ACTUATOR_COUNT; i++)
+  {
+    calibrateActuatorDirection(i);
+  }
+
+  debugLog("direction calibration complete");
+}
+
 void driveTowardTarget(int actuatorIndex, int sensorValue)
 {
+  if (!isActuatorConfigured(actuatorIndex))
+  {
+    return;
+  }
+
   int error = targetValues[actuatorIndex] - sensorValue;
   if (abs(error) <= TARGET_DEADBAND)
   {
@@ -133,21 +292,20 @@ void driveTowardTarget(int actuatorIndex, int sensorValue)
     return;
   }
 
-  bool shouldDriveForward = (error > 0);
+  bool shouldIncreaseSensor = (error > 0);
+  bool useRPWM = sensorIncreasesWithRPWM[actuatorIndex];
+
   if (INVERT_DIRECTION[actuatorIndex])
   {
-    shouldDriveForward = !shouldDriveForward;
+    useRPWM = !useRPWM;
   }
 
-  if (shouldDriveForward)
+  if (!shouldIncreaseSensor)
   {
-    analogWrite(LPWM_PINS[actuatorIndex], 0);
-    analogWrite(RPWM_PINS[actuatorIndex], DRIVE_PWM);
-    return;
+    useRPWM = !useRPWM;
   }
 
-  analogWrite(RPWM_PINS[actuatorIndex], 0);
-  analogWrite(LPWM_PINS[actuatorIndex], DRIVE_PWM);
+  driveActuator(actuatorIndex, useRPWM, DRIVE_PWM);
 }
 
 void sampleAndDriveAllActuators()
@@ -245,6 +403,19 @@ void applyTargets(const int nextTargets[ACTUATOR_COUNT])
   }
 }
 
+/*
+  Command receive and parse section:
+  - This block receives control commands from the host through the serial port.
+  - Characters are buffered until a newline arrives, then the complete line is parsed.
+  - The expected command format is CSV: T,<a1_target>,<a2_target>,<a3_target>,<a4_target>
+  - If the format is valid, the targets are applied; otherwise an error response is sent.
+
+  指令接收与解析部分：
+  - 这里负责从串口接收上位机发送的控制指令。
+  - 字符会被缓存，直到遇到换行符后再组成完整的一行进行解析。
+  - 预期的指令格式为 CSV：T,<a1_target>,<a2_target>,<a3_target>,<a4_target>
+  - 如果格式合法，则更新目标值；否则返回错误响应。
+*/
 void processMessageLine(const char *line)
 {
   if (DEBUG_SERIAL)
@@ -327,6 +498,7 @@ void setup()
   }
 
   stopAllMotors();
+  calibrateActuatorDirections();
   sampleAndDriveAllActuators();
   debugTargets("startup");
   sendTelemetry();
