@@ -225,9 +225,9 @@ These tools are not all strictly required for WSL itself, but they are useful im
 Run:
 
 ```bash
-sudo add-apt-repository ppa:deadsnakes/ppa
+sudo add-apt-repository ppa:deadsnakes/ppa -y
 sudo apt update; sudo apt upgrade -y
-sudo apt install -y curl git wget software-properties-common ca-certificates gnupg lsb-release python3 python3-venv python3-pip
+sudo apt install -y curl git gh wget software-properties-common ca-certificates gnupg lsb-release python3 python3-venv python3-pip
 ```
 
 What these tools are for:

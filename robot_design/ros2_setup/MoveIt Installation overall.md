@@ -16,6 +16,41 @@
 6. Setup workspace
 7. Test
 
+### Combined Install Script
+
+```bash
+sudo apt install -y python3-rosdep
+sudo rosdep init
+rosdep update
+sudo apt update
+sudo apt dist-upgrade
+rosdep update
+sudo apt install python3-rosdep
+sudo rosdep init
+rosdep update
+sudo apt update
+sudo apt dist-upgrade
+sudo apt install -y python3-colcon-common-extensions python3-colcon-mixin
+colcon mixin add default https://raw.githubusercontent.com/colcon/colcon-mixin-repository/master/index.yaml
+colcon mixin update default
+sudo apt install -y python3-vcstool
+sudo apt update; sudo apt upgrade -y
+mkdir -p ~/ws_moveit2/src
+cd ~/ws_moveit2/src
+cd ~/ws_moveit2/src
+git clone --branch humble https://github.com/ros-planning/moveit2_tutorials
+cd ~/ws_moveit2/src
+vcs import < moveit2_tutorials/moveit2_tutorials.repos
+cd ~/ws_moveit2
+source /opt/ros/humble/setup.bash
+rosdep install -r --from-paths . --ignore-src --rosdistro $ROS_DISTRO -y
+colcon build --mixin release --parallel-workers 1
+source ~/ws_moveit2/install/setup.bash
+echo 'source ~/ws_moveit2/install/setup.bash' >> ~/.bashrc
+source /opt/ros/humble/setup.bash
+source ~/ws_moveit2/install/setup.bash
+ros2 launch moveit2_tutorials demo.launch.py
+```
 ---
 
 ## Step 1: Install Dependencies
