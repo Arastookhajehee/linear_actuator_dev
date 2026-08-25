@@ -1,0 +1,6 @@
+<Solution>
+  <Project Path="LinearActuator.App/LinearActuator.App.csproj" />
+  <Project Path="LinearActuator.Core/LinearActuator.Core.csproj" />
+  <Project Path="LinearActuator.Infrastructure/LinearActuator.Infrastructure.csproj" />
+  <Project Path="LinearActuator.Tests/LinearActuator.Tests.csproj" />
+</Solution>

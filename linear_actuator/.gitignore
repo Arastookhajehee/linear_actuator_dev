@@ -1,0 +1,27 @@
+# Build outputs
+bin/
+obj/
+artifacts/
+publish/
+
+# IDE/user-local state
+.vs/
+.vscode/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+
+# Runtime data
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+
+# Logs and temporary files
+*.log
+*.tmp
+*.temp
+
+# Legacy/reference implementations are kept out of the C# rewrite commit.
+archive/
