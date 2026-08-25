@@ -2,6 +2,8 @@
 
 The rewrite is a single Windows WPF executable. It hosts the local WebAPI, SQLite serial-port configuration, in-memory state for 10 actuator modules, and optional serial connections to Arduino controllers.
 
+Current development state: the API, WPF module grid, SQLite serial mapping, generated C# client, serial command formatting, telemetry ingestion, and MotionBatch step planner are implemented and covered by tests. MotionBatch is not yet wired into the API or serial dispatch loop, so posted target bundles still send their final target values directly to enabled Arduino modules.
+
 Each module is one Arduino-controlled group of four actuators. Module IDs are `M01` through `M10`.
 
 ## Component View
@@ -63,7 +65,7 @@ flowchart LR
     tests --> infra
 
     app -. owns .-> wpf[WPF shell and module grid]
-    core -. owns .-> domain[ActuatorState, ActuatorStateBundle, state store, protocol rules]
+    core -. owns .-> domain[ActuatorState, ActuatorStateBundle, MotionBatch, state store, protocol rules]
     infra -. owns .-> adapters[SQLite, EF Core, serial ports, embedded API host]
     clientApi -. owns .-> generated[NSwag generated C# HTTP client]
 ```
@@ -120,6 +122,48 @@ flowchart LR
     store -->|snapshot bundle| response
     response --> client
 ```
+
+This is the active runtime behavior today. `POST /actuator-bundles` stores the submitted final targets and immediately attempts one serial write per enabled, connected module. The MotionBatch planner does not currently intercept this path.
+
+## MotionBatch Planner
+
+```mermaid
+flowchart TD
+    from[From ActuatorStateBundle]
+    to[To ActuatorStateBundle]
+    planner[MotionBatch]
+    steps[Interpolated MotionStep list]
+    active[Active step target bundle]
+    telemetry[Actual telemetry bundle]
+    advance[AdvanceIfActiveStepReached]
+    next[Next step active]
+    done[Batch finished]
+
+    from --> planner
+    to --> planner
+    planner --> steps
+    steps --> active
+    telemetry --> advance
+    active --> advance
+    advance -->|active targets reached within tolerance| next
+    next --> active
+    advance -->|last step reached| done
+```
+
+MotionBatch is a C# state-machine utility for staged movement. It creates intermediate target bundles between a starting bundle and final bundle, marks one step active, and advances only when telemetry currents match the active step targets within tolerance.
+
+Example with `M01.a1_target` moving from `50` to `150` over four steps:
+
+```text
+Step 1: 75
+Step 2: 100
+Step 3: 125
+Step 4: 150
+```
+
+Important limitation: MotionBatch does not send serial commands or subscribe to telemetry by itself. Arduino firmware remains unchanged and would still receive normal CSV commands such as `T,75,50,50,50\n` if a future controller loop dispatches each active step.
+
+Current strict advancement rule: all modules in the active step bundle must have non-null current values that match their active targets within tolerance. Before wiring this into real serial operation, decide whether advancement should instead wait only for changed actuators, changed modules, or serial-enabled modules.
 
 ## Single-Module Compatibility Dataflow
 
@@ -226,3 +270,19 @@ flowchart TD
 - Serial dispatch is controlled by the WPF/SQLite module toggles.
 - Disabled or unavailable serial ports do not block API state updates.
 - Telemetry updates only `*_current` fields for the source module; targets remain server-authoritative.
+
+## Development Checklist
+
+- Implemented: .NET solution with WPF app, Core domain, Infrastructure adapters, Tests, and generated ClientAPI project.
+- Implemented: fixed local API on `127.0.0.1:7500`.
+- Implemented: M01 compatibility API at `GET /actuators` and `POST /actuators`.
+- Implemented: 10-module bundle API at `GET /actuator-bundles` and `POST /actuator-bundles`.
+- Implemented: explicit `Newtonsoft.Json` serialization for API DTOs and generated client behavior.
+- Implemented: SQLite-backed module serial mappings for `M01` through `M10`.
+- Implemented: WPF module layout ordered by physical module position.
+- Implemented: serial writes using archive-compatible CSV command `T,a1,a2,a3,a4\n`.
+- Implemented: JSON telemetry parsing that updates only current fields.
+- Implemented: MotionBatch interpolation and step-advancement tests.
+- Not implemented: MotionBatch integration with API target writes.
+- Not implemented: background controller loop that dispatches active MotionBatch steps and advances from live telemetry.
+- Not implemented: UI controls for creating, starting, cancelling, or monitoring MotionBatch sequences.
