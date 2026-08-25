@@ -55,7 +55,7 @@ public partial class MainWindow : Window
             List<PortMapping> mappings = await portMappingRepository.LoadOrCreateDefaultsAsync();
             ModuleRows.Clear();
 
-            foreach (PortMapping mapping in mappings)
+            foreach (PortMapping mapping in mappings.OrderBy(GetModuleLayoutOrder))
             {
                 ModuleRows.Add(new ModuleRow
                 {
@@ -172,4 +172,22 @@ public partial class MainWindow : Window
     private static string FormatCurrent(double? value) => value?.ToString("0.##") ?? "-";
 
     private static string FormatTarget(double? value) => value?.ToString() ?? "-";
+
+    private static int GetModuleLayoutOrder(PortMapping mapping)
+    {
+        return mapping.ModuleId switch
+        {
+            "M06" => 1,
+            "M07" => 2,
+            "M08" => 3,
+            "M09" => 4,
+            "M10" => 5,
+            "M01" => 6,
+            "M02" => 7,
+            "M03" => 8,
+            "M04" => 9,
+            "M05" => 10,
+            _ => int.MaxValue
+        };
+    }
 }
