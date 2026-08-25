@@ -17,6 +17,7 @@ public sealed class PortMappingRepository
         await dbContext.Database.EnsureCreatedAsync(cancellationToken);
 
         List<PortMapping> mappings = await dbContext.PortMappings
+            .AsNoTracking()
             .OrderBy(mapping => mapping.ModuleId)
             .ToListAsync(cancellationToken);
 
@@ -45,6 +46,11 @@ public sealed class PortMappingRepository
         if (changed)
         {
             await dbContext.SaveChangesAsync(cancellationToken);
+            dbContext.ChangeTracker.Clear();
+            mappings = await dbContext.PortMappings
+                .AsNoTracking()
+                .OrderBy(mapping => mapping.ModuleId)
+                .ToListAsync(cancellationToken);
         }
 
         return mappings.OrderBy(mapping => mapping.ModuleId).ToList();
@@ -53,6 +59,7 @@ public sealed class PortMappingRepository
     public async Task SaveAsync(IEnumerable<PortMapping> mappings, CancellationToken cancellationToken = default)
     {
         await dbContext.Database.EnsureCreatedAsync(cancellationToken);
+        dbContext.ChangeTracker.Clear();
 
         foreach (PortMapping mapping in mappings)
         {

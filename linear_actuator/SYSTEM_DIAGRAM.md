@@ -20,6 +20,7 @@ flowchart TB
     end
 
     client[Grasshopper / External HTTP Client]
+    csharp[External C# app using LinearActuator.ClientAPI]
     arduino[Arduino module controllers]
 
     ui -->|serial on/off, COM, baud| repo
@@ -32,6 +33,7 @@ flowchart TB
     client -->|POST /actuators| api
     client -->|GET /actuator-bundles| api
     client -->|POST /actuator-bundles| api
+    csharp -->|generated typed client| api
 
     api -->|read/write state| store
     store --> bundle
@@ -50,17 +52,20 @@ flowchart LR
     app[LinearActuator.App]
     core[LinearActuator.Core]
     infra[LinearActuator.Infrastructure]
+    clientApi[LinearActuator.ClientAPI]
     tests[LinearActuator.Tests]
 
     app --> core
     app --> infra
     infra --> core
+    clientApi --> core
     tests --> core
     tests --> infra
 
     app -. owns .-> wpf[WPF shell and module grid]
     core -. owns .-> domain[ActuatorState, ActuatorStateBundle, state store, protocol rules]
     infra -. owns .-> adapters[SQLite, EF Core, serial ports, embedded API host]
+    clientApi -. owns .-> generated[NSwag generated C# HTTP client]
 ```
 
 ## API Shape

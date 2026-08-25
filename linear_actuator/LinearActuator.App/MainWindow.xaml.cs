@@ -181,5 +181,5 @@ public partial class MainWindow : Window
 
     private static string FormatCurrent(double? value) => value?.ToString("0.##") ?? "-";
 
-    private static string FormatTarget(int? value) => value?.ToString() ?? "-";
+    private static string FormatTarget(double? value) => value?.ToString() ?? "-";
 }

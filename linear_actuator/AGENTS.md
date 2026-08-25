@@ -2,7 +2,7 @@
 
 - Treat `linear_actuator/` as the development scope; do not modify parent/root repo files unless the user explicitly expands scope.
 - This project is a C# rewrite target; the verified source behavior is the Python + Arduino implementation in `./lin_act_controller_modules/`.
-- Current C# solution scaffold: `LinearActuator.slnx` with `LinearActuator.App`, `LinearActuator.Core`, `LinearActuator.Infrastructure`, and `LinearActuator.Tests`.
+- Current C# solution scaffold: `LinearActuator.slnx` with `LinearActuator.App`, `LinearActuator.Core`, `LinearActuator.Infrastructure`, `LinearActuator.ClientAPI`, and `LinearActuator.Tests`.
 
 ## Archive Behavior To Preserve
 
@@ -29,6 +29,8 @@
 - Build: `dotnet build LinearActuator.slnx`.
 - Test: `dotnet test LinearActuator.slnx`.
 - Run the WPF host: `dotnet run --project LinearActuator.App`.
+- Run API only for client generation: `dotnet run --project LinearActuator.App -- --api-only`.
+- Generate NSwag client from the running API: `dotnet build LinearActuator.ClientAPI /t:GenerateClient`.
 - Publish single-file Windows exe: `dotnet publish LinearActuator.App -c Release -r win-x64 --self-contained true /p:PublishSingleFile=true /p:IncludeNativeLibrariesForSelfExtract=true`.
 
 ## Useful Archive Commands

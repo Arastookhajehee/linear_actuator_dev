@@ -8,25 +8,25 @@ public sealed class ActuatorState
     public double? A1Current { get; set; }
 
     [JsonPropertyName("a1_target")]
-    public int? A1Target { get; set; } = ActuatorConstants.DefaultTarget;
+    public double? A1Target { get; set; } = ActuatorConstants.DefaultTarget;
 
     [JsonPropertyName("a2_current")]
     public double? A2Current { get; set; }
 
     [JsonPropertyName("a2_target")]
-    public int? A2Target { get; set; } = ActuatorConstants.DefaultTarget;
+    public double? A2Target { get; set; } = ActuatorConstants.DefaultTarget;
 
     [JsonPropertyName("a3_current")]
     public double? A3Current { get; set; }
 
     [JsonPropertyName("a3_target")]
-    public int? A3Target { get; set; } = ActuatorConstants.DefaultTarget;
+    public double? A3Target { get; set; } = ActuatorConstants.DefaultTarget;
 
     [JsonPropertyName("a4_current")]
     public double? A4Current { get; set; }
 
     [JsonPropertyName("a4_target")]
-    public int? A4Target { get; set; } = ActuatorConstants.DefaultTarget;
+    public double? A4Target { get; set; } = ActuatorConstants.DefaultTarget;
 
     public static ActuatorState CreateDefault() => new();
 

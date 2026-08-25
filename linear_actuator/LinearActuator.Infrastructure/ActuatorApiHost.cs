@@ -1,6 +1,5 @@
 using LinearActuator.Core;
 using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -34,21 +33,34 @@ public sealed class ActuatorApiHost : IAsyncDisposable
         {
             options.SerializerOptions.PropertyNameCaseInsensitive = true;
         });
+        builder.Services.AddEndpointsApiExplorer();
+        builder.Services.AddOpenApiDocument(settings =>
+        {
+            settings.Title = "Linear Actuator API";
+            settings.Version = "v1";
+        });
 
         WebApplication webApp = builder.Build();
 
-        webApp.MapGet("/actuators", () => Results.Json(stateStore.Snapshot()));
-        webApp.MapPost("/actuators", async (ActuatorState state, CancellationToken requestAborted) =>
+        webApp.UseOpenApi();
+        webApp.UseSwaggerUi();
+
+        webApp.MapGet("/actuators", () => stateStore.Snapshot())
+            .WithName("GetActuators");
+
+        webApp.MapPost("/actuators", async Task<ActuatorState> (ActuatorState state, CancellationToken requestAborted) =>
         {
             stateStore.ReplaceState(state);
 
             await serialModuleManager.SendTargetsAsync(ActuatorConstants.DefaultModuleId, state, requestAborted);
 
-            return Results.Json(stateStore.Snapshot());
-        });
+            return stateStore.Snapshot();
+        }).WithName("PostActuators");
 
-        webApp.MapGet("/actuator-bundles", () => Results.Json(stateStore.SnapshotBundle()));
-        webApp.MapPost("/actuator-bundles", async (ActuatorStateBundle bundle, CancellationToken requestAborted) =>
+        webApp.MapGet("/actuator-bundles", () => stateStore.SnapshotBundle())
+            .WithName("GetActuatorBundles");
+
+        webApp.MapPost("/actuator-bundles", async Task<ActuatorStateBundle> (ActuatorStateBundle bundle, CancellationToken requestAborted) =>
         {
             stateStore.ReplaceBundle(bundle);
 
@@ -57,8 +69,8 @@ public sealed class ActuatorApiHost : IAsyncDisposable
                 await serialModuleManager.SendTargetsAsync(module.Key, module.Value, requestAborted);
             }
 
-            return Results.Json(stateStore.SnapshotBundle());
-        });
+            return stateStore.SnapshotBundle();
+        }).WithName("PostActuatorBundles");
 
         await webApp.StartAsync(cancellationToken);
         app = webApp;

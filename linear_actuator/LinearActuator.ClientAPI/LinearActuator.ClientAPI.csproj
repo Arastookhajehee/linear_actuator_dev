@@ -5,14 +5,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.*">
+    <PackageReference Include="Newtonsoft.Json" Version="13.*" />
+    <PackageReference Include="NSwag.MSBuild" Version="14.*">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.*" />
-    <PackageReference Include="NSwag.AspNetCore" Version="14.*" />
-    <PackageReference Include="System.IO.Ports" Version="8.*" />
   </ItemGroup>
 
   <PropertyGroup>
@@ -20,5 +17,13 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="Generated\LinearActuatorApiClient.cs" Condition="!Exists('Generated\LinearActuatorApiClient.cs')" />
+  </ItemGroup>
+
+  <Target Name="GenerateClient">
+    <Exec WorkingDirectory="$(MSBuildProjectDirectory)" Command="$(NSwagExe_Net80) run nswag.json" />
+  </Target>
 
 </Project>
