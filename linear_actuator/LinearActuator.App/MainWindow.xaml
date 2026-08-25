@@ -144,10 +144,10 @@
             </Border>
 
             <GroupBox Grid.Column="2" Header="Module Layout Reference">
-                <Border Padding="8" Background="#FAFAFA">
-                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-                        <Image Source="res/ModuleGrid.png" Stretch="Uniform" />
-                    </ScrollViewer>
+                <Border Padding="8" Background="#FAFAFA" ClipToBounds="True">
+                    <Grid>
+                        <Image Source="res/ModuleGrid.png" Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                    </Grid>
                 </Border>
             </GroupBox>
         </Grid>
