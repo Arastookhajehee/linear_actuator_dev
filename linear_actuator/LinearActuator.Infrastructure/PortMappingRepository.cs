@@ -12,45 +12,58 @@ public sealed class PortMappingRepository
         this.dbContext = dbContext;
     }
 
-    public async Task<PortMapping> LoadOrCreateDefaultAsync(CancellationToken cancellationToken = default)
+    public async Task<List<PortMapping>> LoadOrCreateDefaultsAsync(CancellationToken cancellationToken = default)
     {
         await dbContext.Database.EnsureCreatedAsync(cancellationToken);
 
-        PortMapping? existing = await dbContext.PortMappings
-            .OrderBy(mapping => mapping.Id)
-            .FirstOrDefaultAsync(cancellationToken);
+        List<PortMapping> mappings = await dbContext.PortMappings
+            .OrderBy(mapping => mapping.ModuleId)
+            .ToListAsync(cancellationToken);
 
-        if (existing is not null)
+        bool changed = false;
+        for (int i = 1; i <= ActuatorConstants.ModuleCount; i++)
         {
-            return existing;
+            string moduleId = ActuatorConstants.FormatModuleId(i);
+            if (mappings.Any(mapping => mapping.ModuleId == moduleId))
+            {
+                continue;
+            }
+
+            PortMapping mapping = new()
+            {
+                ModuleId = moduleId,
+                ComPort = string.Empty,
+                BaudRate = ActuatorConstants.DefaultBaudRate,
+                SerialEnabled = false
+            };
+
+            dbContext.PortMappings.Add(mapping);
+            mappings.Add(mapping);
+            changed = true;
         }
 
-        PortMapping mapping = new()
+        if (changed)
         {
-            Name = "API01",
-            ComPort = "COM4",
-            ApiHost = ActuatorConstants.DefaultApiHost,
-            ApiPort = ActuatorConstants.DefaultApiPort,
-            BaudRate = ActuatorConstants.DefaultBaudRate,
-            Enabled = true
-        };
+            await dbContext.SaveChangesAsync(cancellationToken);
+        }
 
-        dbContext.PortMappings.Add(mapping);
-        await dbContext.SaveChangesAsync(cancellationToken);
-        return mapping;
+        return mappings.OrderBy(mapping => mapping.ModuleId).ToList();
     }
 
-    public async Task SaveAsync(PortMapping mapping, CancellationToken cancellationToken = default)
+    public async Task SaveAsync(IEnumerable<PortMapping> mappings, CancellationToken cancellationToken = default)
     {
         await dbContext.Database.EnsureCreatedAsync(cancellationToken);
 
-        if (mapping.Id == 0)
+        foreach (PortMapping mapping in mappings)
         {
-            dbContext.PortMappings.Add(mapping);
-        }
-        else
-        {
-            dbContext.PortMappings.Update(mapping);
+            if (mapping.Id == 0)
+            {
+                dbContext.PortMappings.Add(mapping);
+            }
+            else
+            {
+                dbContext.PortMappings.Update(mapping);
+            }
         }
 
         await dbContext.SaveChangesAsync(cancellationToken);

@@ -8,7 +8,10 @@
 
 - Python API entrypoint: `archive/controller_py/main.py`.
 - Arduino firmware entrypoint: `lin_act_controller_modules/lin_act_controller_modules.ino`.
-- The API exposes `GET /actuators` and `POST /actuators` with a flat four-actuator schema: `a1_current`, `a1_target`, ..., `a4_current`, `a4_target`.
+- The compatibility API exposes `GET /actuators` and `POST /actuators` for module `M01` with the flat four-actuator schema: `a1_current`, `a1_target`, ..., `a4_current`, `a4_target`.
+- The bundle API exposes `GET /actuator-bundles` and `POST /actuator-bundles` with `{ "modules": { "M01": ActuatorState, ..., "M10": ActuatorState } }`.
+- The API port is fixed at `127.0.0.1:7500`; do not reintroduce multiple API ports unless explicitly requested.
+- The system has 10 serial-controlled modules, each with 4 actuators. WPF/SQLite serial toggles decide which modules send commands to COM ports.
 - Server state is authoritative for targets; serial telemetry updates only `*_current` fields.
 - Default target is `50` for all four actuators.
 - Serial command sent to Arduino is CSV, not JSON: `T,a1,a2,a3,a4\n`.

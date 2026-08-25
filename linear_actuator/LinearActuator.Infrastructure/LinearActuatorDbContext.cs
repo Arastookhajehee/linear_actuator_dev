@@ -15,9 +15,9 @@ public sealed class LinearActuatorDbContext : DbContext
     {
         modelBuilder.Entity<PortMapping>(entity =>
         {
-            entity.Property(mapping => mapping.Name).HasMaxLength(64).IsRequired();
+            entity.HasIndex(mapping => mapping.ModuleId).IsUnique();
+            entity.Property(mapping => mapping.ModuleId).HasMaxLength(8).IsRequired();
             entity.Property(mapping => mapping.ComPort).HasMaxLength(32).IsRequired();
-            entity.Property(mapping => mapping.ApiHost).HasMaxLength(128).IsRequired();
         });
     }
 }

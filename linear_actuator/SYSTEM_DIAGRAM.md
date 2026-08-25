@@ -1,6 +1,8 @@
 # Linear Actuator System Diagram
 
-This rewrite is a single Windows WPF executable that hosts the local WebAPI, SQLite configuration storage, in-memory actuator state, and Arduino serial communication in one process.
+The rewrite is a single Windows WPF executable. It hosts the local WebAPI, SQLite serial-port configuration, in-memory state for 10 actuator modules, and optional serial connections to Arduino controllers.
+
+Each module is one Arduino-controlled group of four actuators. Module IDs are `M01` through `M10`.
 
 ## Component View
 
@@ -8,28 +10,37 @@ This rewrite is a single Windows WPF executable that hosts the local WebAPI, SQL
 flowchart TB
     subgraph exe[LinearActuator.App single exe]
         ui[WPF UI]
-        api[Embedded ASP.NET Core Minimal API]
-        state[ActuatorStateStore]
-        db[(SQLite database)]
+        api[Embedded Minimal API on 127.0.0.1:7500]
+        store[ActuatorStateStore]
+        bundle[ActuatorStateBundle: 10 modules]
         repo[PortMappingRepository]
-        serial[SerialActuatorConnection]
+        db[(SQLite: linear-actuator-modules.db)]
+        serialManager[SerialModuleManager]
+        serialConn[SerialActuatorConnection per enabled module]
     end
 
-    grasshopper[Grasshopper / External HTTP Client]
-    arduino[Arduino Mega Firmware]
+    client[Grasshopper / External HTTP Client]
+    arduino[Arduino module controllers]
 
-    ui -->|start/stop, port settings| api
-    ui -->|load/save mapping| repo
+    ui -->|serial on/off, COM, baud| repo
     repo --> db
-    ui -->|display current/target state| state
+    ui -->|start/stop runtime| api
+    ui -->|start enabled serial rows| serialManager
+    ui -->|display current/target state| store
 
-    grasshopper -->|GET /actuators| api
-    grasshopper -->|POST /actuators| api
-    api -->|read/replace state| state
-    api -->|target command| serial
-    serial -->|CSV: T,a1,a2,a3,a4| arduino
-    arduino -->|JSON telemetry lines| serial
-    serial -->|update current fields only| state
+    client -->|GET /actuators| api
+    client -->|POST /actuators| api
+    client -->|GET /actuator-bundles| api
+    client -->|POST /actuator-bundles| api
+
+    api -->|read/write state| store
+    store --> bundle
+    api -->|dispatch targets by module| serialManager
+    serialManager --> serialConn
+    serialConn -->|CSV: T,a1,a2,a3,a4| arduino
+    arduino -->|JSON telemetry lines| serialConn
+    serialConn -->|module telemetry| serialManager
+    serialManager -->|update selected module currents| store
 ```
 
 ## Project Boundaries
@@ -47,222 +58,166 @@ flowchart LR
     tests --> core
     tests --> infra
 
-    app -. owns .-> wpf[WPF shell]
-    core -. owns .-> model[DTOs, state store, serial protocol rules]
-    infra -. owns .-> integrations[SQLite, EF Core, serial port, embedded API host]
+    app -. owns .-> wpf[WPF shell and module grid]
+    core -. owns .-> domain[ActuatorState, ActuatorStateBundle, state store, protocol rules]
+    infra -. owns .-> adapters[SQLite, EF Core, serial ports, embedded API host]
 ```
 
-## API Request Flow
-
-```mermaid
-sequenceDiagram
-    participant Client as External HTTP Client
-    participant API as Minimal API
-    participant State as ActuatorStateStore
-    participant Serial as SerialActuatorConnection
-    participant Arduino as Arduino Firmware
-
-    Client->>API: GET /actuators
-    API->>State: Snapshot()
-    State-->>API: current state
-    API-->>Client: flat actuator JSON
-
-    Client->>API: POST /actuators flat actuator JSON
-    API->>State: ReplaceState(request)
-    API->>Serial: SendTargetsAsync(state)
-    alt Serial connected
-        Serial->>Arduino: T,a1,a2,a3,a4\n
-    else Serial unavailable or write fails
-        API->>API: keep server-side state anyway
-    end
-    API->>State: Snapshot()
-    API-->>Client: flat actuator JSON
-```
-
-## Serial Telemetry Flow
-
-```mermaid
-sequenceDiagram
-    participant Arduino as Arduino Firmware
-    participant Serial as SerialActuatorConnection
-    participant Protocol as SerialProtocol
-    participant State as ActuatorStateStore
-    participant UI as WPF UI
-
-    Arduino->>Serial: JSON line with a*_current and a*_target
-    Serial->>Protocol: ParseTelemetry(line)
-    alt valid actuator JSON
-        Protocol-->>Serial: ActuatorState
-        Serial->>State: UpdateCurrents(telemetry)
-        State-->>UI: StateChanged event
-        UI->>UI: refresh current/target display
-    else invalid JSON or Arduino error
-        Serial-->>UI: MessageReceived
-        UI->>UI: update status text
-    end
-```
-
-## SQLite Configuration Flow
+## API Shape
 
 ```mermaid
 flowchart TD
-    startup[WPF window loaded]
-    load[LoadOrCreateDefaultAsync]
-    sqlite[(linear-actuator.db)]
-    form[COM port / API port / baud fields]
-    start[Start button]
-    save[SaveAsync]
-    api[Start embedded API]
-    serial[Open serial port if COM port is set]
+    singleGet[GET /actuators]
+    singlePost[POST /actuators]
+    bundleGet[GET /actuator-bundles]
+    bundlePost[POST /actuator-bundles]
+    m01[M01 ActuatorState]
+    all[ActuatorStateBundle modules object]
 
-    startup --> load
-    load --> sqlite
-    load --> form
-    start --> save
-    save --> sqlite
-    start --> serial
-    start --> api
+    singleGet -->|compatibility view| m01
+    singlePost -->|compatibility write| m01
+    bundleGet --> all
+    bundlePost --> all
 ```
 
-## Dataflow Diagrams
+Bundle JSON shape:
 
-### Startup Dataflow
-
-```mermaid
-flowchart LR
-    launch[User launches LinearActuator.App.exe]
-    ui[WPF MainWindow]
-    repo[PortMappingRepository]
-    db[(SQLite: linear-actuator.db)]
-    defaults[Default mapping values]
-    fields[UI fields]
-
-    launch --> ui
-    ui -->|request saved mapping| repo
-    repo -->|query first mapping| db
-    db -->|mapping exists| repo
-    db -. no rows .-> defaults
-    defaults -->|insert API01 / COM4 / 7500 / 9600| db
-    repo -->|PortMapping| fields
+```json
+{
+  "modules": {
+    "M01": { "a1_current": null, "a1_target": 50, "a2_current": null, "a2_target": 50, "a3_current": null, "a3_target": 50, "a4_current": null, "a4_target": 50 },
+    "M02": { "a1_current": null, "a1_target": 50, "a2_current": null, "a2_target": 50, "a3_current": null, "a3_target": 50, "a4_current": null, "a4_target": 50 }
+  }
+}
 ```
 
-### Target Command Dataflow
+## Bundle Target Dataflow
 
 ```mermaid
 flowchart LR
     client[External client]
-    request[POST /actuators JSON]
+    request[POST /actuator-bundles]
     api[Minimal API]
     store[ActuatorStateStore]
-    protocol[SerialProtocol]
-    serial[SerialActuatorConnection]
-    arduino[Arduino]
-    response[Response JSON]
+    bundle[In-memory 10-module bundle]
+    serialManager[SerialModuleManager]
+    mappings[SQLite serial mappings]
+    arduino[Enabled Arduino modules]
+    response[Bundle response]
 
     client --> request
-    request -->|flat a*_current / a*_target body| api
-    api -->|replace complete state| store
-    api -->|same request state| protocol
-    protocol -->|validate targets 0..800| protocol
-    protocol -->|T,a1,a2,a3,a4\n| serial
-    serial -->|write line if connected| arduino
-    store -->|snapshot| response
+    request -->|modules M01..M10| api
+    api -->|replace full bundle| store
+    store --> bundle
+    api -->|for each module target| serialManager
+    mappings -->|serial enabled and connected decides dispatch| serialManager
+    serialManager -->|CSV per enabled module| arduino
+    store -->|snapshot bundle| response
     response --> client
 ```
 
-### Telemetry Dataflow
+## Single-Module Compatibility Dataflow
+
+```mermaid
+sequenceDiagram
+    participant Client as External Client
+    participant API as Minimal API
+    participant Store as ActuatorStateStore
+    participant Serial as SerialModuleManager
+    participant Arduino as M01 Arduino
+
+    Client->>API: GET /actuators
+    API->>Store: SnapshotModule(M01)
+    Store-->>API: ActuatorState
+    API-->>Client: flat four-actuator JSON
+
+    Client->>API: POST /actuators
+    API->>Store: ReplaceModule(M01, state)
+    API->>Serial: SendTargetsAsync(M01, state)
+    alt M01 serial enabled and connected
+        Serial->>Arduino: T,a1,a2,a3,a4\n
+    else disabled or unavailable
+        Serial-->>API: skip serial write
+    end
+    API->>Store: SnapshotModule(M01)
+    API-->>Client: flat four-actuator JSON
+```
+
+## Serial Telemetry Dataflow
 
 ```mermaid
 flowchart LR
-    arduino[Arduino]
-    line[JSON line]
-    serial[SerialActuatorConnection read loop]
-    protocol[SerialProtocol.ParseTelemetry]
-    telemetry[ActuatorState telemetry]
+    arduino[Arduino module]
+    line[JSON telemetry line]
+    conn[SerialActuatorConnection]
+    manager[SerialModuleManager]
     store[ActuatorStateStore]
-    ui[WPF current/target display]
-    api[GET /actuators]
+    ui[WPF module row]
+    api[GET endpoints]
 
     arduino --> line
-    line --> serial
-    serial --> protocol
-    protocol --> telemetry
-    telemetry -->|copy only a*_current| store
-    store -->|StateChanged| ui
-    store -->|Snapshot| api
+    line --> conn
+    conn -->|parse ActuatorState| manager
+    manager -->|module ID + telemetry| store
+    store -->|copy only a*_current into that module| store
+    store -->|StateChanged bundle| ui
+    store -->|snapshot| api
 ```
 
-### Server-Authoritative Target Dataflow
+## Serial Toggle Dataflow
 
 ```mermaid
 flowchart TD
-    post[POST /actuators]
-    postedTargets[Posted a*_target values]
-    store[(In-memory state)]
-    telemetry[Arduino telemetry]
-    telemetryTargets[Telemetry a*_target values]
-    currents[Telemetry a*_current values]
-    snapshot[GET /actuators snapshot]
+    grid[WPF 10-module grid]
+    toggle[SerialEnabled checkbox]
+    com[COM port textbox]
+    baud[Baud textbox]
+    save[Save PortMapping rows]
+    db[(SQLite)]
+    start[Start button]
+    manager[SerialModuleManager]
+    skip[Skip disabled rows]
+    open[Open enabled COM ports]
 
-    post --> postedTargets
-    postedTargets -->|replace targets| store
-    telemetry --> telemetryTargets
-    telemetry --> currents
-    telemetryTargets -. ignored for server truth .-> store
-    currents -->|update currents only| store
-    store --> snapshot
+    grid --> toggle
+    grid --> com
+    grid --> baud
+    toggle --> save
+    com --> save
+    baud --> save
+    save --> db
+    start --> manager
+    manager --> skip
+    manager --> open
 ```
 
-### Persistence Dataflow
+## Persistence Dataflow
 
 ```mermaid
 flowchart TD
-    settings[UI mapping fields]
-    mapping[PortMapping entity]
-    sqlite[(SQLite)]
-    runtime[Runtime services]
-    api[ActuatorApiHost]
-    serial[SerialActuatorConnection]
-    state[ActuatorStateStore]
+    startup[WPF window loaded]
+    repo[PortMappingRepository]
+    db[(SQLite)]
+    seed[Seed M01..M10 if missing]
+    rows[WPF module rows]
+    runtime[Runtime serial manager]
 
-    settings --> mapping
-    mapping -->|save COM/API/baud config| sqlite
-    sqlite -->|load config on startup| mapping
-    mapping --> runtime
-    runtime --> api
-    runtime --> serial
-    state -. live actuator state is not persisted yet .-> runtime
+    startup --> repo
+    repo --> db
+    db -. missing rows .-> seed
+    seed --> db
+    repo --> rows
+    rows -->|save before start| repo
+    rows -->|enabled rows + COM + baud| runtime
 ```
 
-## Preserved Archive Contract
+## Compatibility Rules
 
-```mermaid
-classDiagram
-    class ActuatorState {
-        double? a1_current
-        int? a1_target = 50
-        double? a2_current
-        int? a2_target = 50
-        double? a3_current
-        int? a3_target = 50
-        double? a4_current
-        int? a4_target = 50
-    }
-
-    class SerialProtocol {
-        FormatTargetCommand(ActuatorState) string
-        ParseTelemetry(string) ActuatorState?
-        IsValidTarget(int?) bool
-    }
-
-    ActuatorStateStore --> ActuatorState
-    SerialProtocol --> ActuatorState
-```
-
-Key compatibility rules:
-
-- HTTP JSON remains the flat four-actuator schema.
-- Default target remains `50`.
+- Fixed local API endpoint: `http://127.0.0.1:7500`.
+- `GET /actuators` and `POST /actuators` remain the flat four-actuator M01 compatibility API.
+- `GET /actuator-bundles` and `POST /actuator-bundles` handle all 10 modules in one payload.
+- Each serial command remains CSV: `T,a1,a2,a3,a4\n`.
 - Target range remains `0..800`.
-- Serial commands to Arduino are CSV, not JSON.
-- Arduino telemetry updates only `*_current`; server targets remain authoritative.
+- Serial dispatch is controlled by the WPF/SQLite module toggles.
+- Disabled or unavailable serial ports do not block API state updates.
+- Telemetry updates only `*_current` fields for the source module; targets remain server-authoritative.

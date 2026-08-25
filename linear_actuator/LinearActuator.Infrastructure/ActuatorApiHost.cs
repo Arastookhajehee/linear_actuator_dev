@@ -10,18 +10,18 @@ namespace LinearActuator.Infrastructure;
 public sealed class ActuatorApiHost : IAsyncDisposable
 {
     private readonly ActuatorStateStore stateStore;
-    private readonly SerialActuatorConnection serialConnection;
+    private readonly SerialModuleManager serialModuleManager;
     private WebApplication? app;
 
-    public ActuatorApiHost(ActuatorStateStore stateStore, SerialActuatorConnection serialConnection)
+    public ActuatorApiHost(ActuatorStateStore stateStore, SerialModuleManager serialModuleManager)
     {
         this.stateStore = stateStore;
-        this.serialConnection = serialConnection;
+        this.serialModuleManager = serialModuleManager;
     }
 
     public bool IsRunning => app is not null;
 
-    public async Task StartAsync(string host, int port, CancellationToken cancellationToken = default)
+    public async Task StartAsync(CancellationToken cancellationToken = default)
     {
         if (app is not null)
         {
@@ -29,7 +29,7 @@ public sealed class ActuatorApiHost : IAsyncDisposable
         }
 
         WebApplicationBuilder builder = WebApplication.CreateBuilder();
-        builder.WebHost.UseUrls($"http://{host}:{port}");
+        builder.WebHost.UseUrls($"http://{ActuatorConstants.DefaultApiHost}:{ActuatorConstants.DefaultApiPort}");
         builder.Services.ConfigureHttpJsonOptions(options =>
         {
             options.SerializerOptions.PropertyNameCaseInsensitive = true;
@@ -42,16 +42,22 @@ public sealed class ActuatorApiHost : IAsyncDisposable
         {
             stateStore.ReplaceState(state);
 
-            try
-            {
-                await serialConnection.SendTargetsAsync(state, requestAborted);
-            }
-            catch
-            {
-                // Match the archive behavior: API state remains updated even if serial write fails.
-            }
+            await serialModuleManager.SendTargetsAsync(ActuatorConstants.DefaultModuleId, state, requestAborted);
 
             return Results.Json(stateStore.Snapshot());
+        });
+
+        webApp.MapGet("/actuator-bundles", () => Results.Json(stateStore.SnapshotBundle()));
+        webApp.MapPost("/actuator-bundles", async (ActuatorStateBundle bundle, CancellationToken requestAborted) =>
+        {
+            stateStore.ReplaceBundle(bundle);
+
+            foreach (KeyValuePair<string, ActuatorState> module in stateStore.SnapshotBundle().Modules)
+            {
+                await serialModuleManager.SendTargetsAsync(module.Key, module.Value, requestAborted);
+            }
+
+            return Results.Json(stateStore.SnapshotBundle());
         });
 
         await webApp.StartAsync(cancellationToken);

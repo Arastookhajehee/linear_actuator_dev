@@ -1,4 +1,6 @@
-﻿using System.IO;
+﻿using System.Collections.ObjectModel;
+using System.IO;
+using System.Linq;
 using System.Windows;
 using LinearActuator.Core;
 using LinearActuator.Infrastructure;
@@ -8,40 +10,65 @@ namespace LinearActuator.App;
 
 public partial class MainWindow : Window
 {
+    public ObservableCollection<ModuleRow> ModuleRows { get; } = new();
+
     private readonly ActuatorStateStore stateStore = new();
-    private readonly SerialActuatorConnection serialConnection = new();
+    private readonly SerialModuleManager serialModuleManager = new();
     private readonly ActuatorApiHost apiHost;
     private readonly PortMappingRepository portMappingRepository;
-    private PortMapping currentMapping = new();
 
     public MainWindow()
     {
         InitializeComponent();
 
         LinearActuatorDbContext dbContext = new(new DbContextOptionsBuilder<LinearActuatorDbContext>()
-            .UseSqlite($"Data Source={Path.Combine(AppContext.BaseDirectory, "linear-actuator.db")}")
+            .UseSqlite($"Data Source={Path.Combine(AppContext.BaseDirectory, "linear-actuator-modules.db")}")
             .Options);
 
         portMappingRepository = new PortMappingRepository(dbContext);
-        apiHost = new ActuatorApiHost(stateStore, serialConnection);
+        apiHost = new ActuatorApiHost(stateStore, serialModuleManager);
 
-        stateStore.StateChanged += (_, state) => Dispatcher.Invoke(() => DisplayState(state));
-        serialConnection.TelemetryReceived += (_, telemetry) => stateStore.UpdateCurrents(telemetry);
-        serialConnection.MessageReceived += (_, message) => Dispatcher.Invoke(() => SetStatus(message));
+        DataContext = this;
+
+        stateStore.StateChanged += (_, bundle) => Dispatcher.Invoke(() => DisplayState(bundle));
+        serialModuleManager.TelemetryReceived += (_, args) => stateStore.UpdateCurrents(args.ModuleId, args.Telemetry);
+        serialModuleManager.MessageReceived += (_, args) => Dispatcher.Invoke(() =>
+        {
+            ModuleRow? row = ModuleRows.FirstOrDefault(module => module.ModuleId == args.ModuleId);
+            if (row is not null)
+            {
+                row.Status = args.Message;
+            }
+
+            SetStatus($"{args.ModuleId}: {args.Message}");
+        });
 
         Loaded += MainWindow_Loaded;
         Closed += MainWindow_Closed;
-        DisplayState(stateStore.Snapshot());
+        DisplayState(stateStore.SnapshotBundle());
     }
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         try
         {
-            currentMapping = await portMappingRepository.LoadOrCreateDefaultAsync();
-            ComPortTextBox.Text = currentMapping.ComPort;
-            ApiPortTextBox.Text = currentMapping.ApiPort.ToString();
-            BaudRateTextBox.Text = currentMapping.BaudRate.ToString();
+            List<PortMapping> mappings = await portMappingRepository.LoadOrCreateDefaultsAsync();
+            ModuleRows.Clear();
+
+            foreach (PortMapping mapping in mappings)
+            {
+                ModuleRows.Add(new ModuleRow
+                {
+                    MappingId = mapping.Id,
+                    ModuleId = mapping.ModuleId,
+                    SerialEnabled = mapping.SerialEnabled,
+                    ComPort = mapping.ComPort,
+                    BaudRate = mapping.BaudRate,
+                    Status = mapping.SerialEnabled ? "Enabled" : "Off"
+                });
+            }
+
+            DisplayState(stateStore.SnapshotBundle());
             SetStatus("Ready.");
         }
         catch (Exception ex)
@@ -58,48 +85,55 @@ public partial class MainWindow : Window
         {
             if (apiHost.IsRunning)
             {
-                serialConnection.Stop();
+                serialModuleManager.Stop();
                 await apiHost.StopAsync();
                 StartStopButton.Content = "Start";
+                foreach (ModuleRow row in ModuleRows)
+                {
+                    row.Status = row.SerialEnabled ? "Enabled" : "Off";
+                }
+
                 SetStatus("Stopped.");
                 return;
             }
 
-            if (!int.TryParse(ApiPortTextBox.Text, out int apiPort) || apiPort <= 0)
+            ModuleGrid.CommitEdit();
+            ModuleGrid.CommitEdit(System.Windows.Controls.DataGridEditingUnit.Row, true);
+
+            List<PortMapping> mappings = ModuleRows.Select(row => new PortMapping
             {
-                SetStatus("API port must be a positive number.");
+                Id = row.MappingId,
+                ModuleId = row.ModuleId,
+                ComPort = row.ComPort.Trim(),
+                BaudRate = row.BaudRate,
+                SerialEnabled = row.SerialEnabled
+            }).ToList();
+
+            PortMapping? invalidBaud = mappings.FirstOrDefault(mapping => mapping.BaudRate <= 0);
+            if (invalidBaud is not null)
+            {
+                SetStatus($"{invalidBaud.ModuleId} baud rate must be a positive number.");
                 return;
             }
 
-            if (!int.TryParse(BaudRateTextBox.Text, out int baudRate) || baudRate <= 0)
+            await portMappingRepository.SaveAsync(mappings);
+            foreach (ModuleRow row in ModuleRows)
             {
-                SetStatus("Baud rate must be a positive number.");
-                return;
+                row.Status = row.SerialEnabled ? "Starting" : "Off";
             }
 
-            currentMapping.ComPort = ComPortTextBox.Text.Trim();
-            currentMapping.ApiHost = ActuatorConstants.DefaultApiHost;
-            currentMapping.ApiPort = apiPort;
-            currentMapping.BaudRate = baudRate;
-            await portMappingRepository.SaveAsync(currentMapping);
-
-            string serialStatus = "serial not connected";
-            if (!string.IsNullOrWhiteSpace(currentMapping.ComPort))
+            serialModuleManager.Start(mappings);
+            IReadOnlyDictionary<string, bool> statuses = serialModuleManager.ConnectionStatuses;
+            foreach (ModuleRow row in ModuleRows)
             {
-                try
-                {
-                    serialConnection.Start(currentMapping.ComPort, currentMapping.BaudRate);
-                    serialStatus = $"serial connected on {currentMapping.ComPort}";
-                }
-                catch (Exception ex)
-                {
-                    serialStatus = $"serial unavailable: {ex.Message}";
-                }
+                row.Status = row.SerialEnabled
+                    ? statuses.TryGetValue(row.ModuleId, out bool connected) && connected ? "Connected" : "Unavailable"
+                    : "Off";
             }
 
-            await apiHost.StartAsync(currentMapping.ApiHost, currentMapping.ApiPort);
+            await apiHost.StartAsync();
             StartStopButton.Content = "Stop";
-            SetStatus($"API running at http://{currentMapping.ApiHost}:{currentMapping.ApiPort}; {serialStatus}.");
+            SetStatus($"API running at http://{ActuatorConstants.DefaultApiHost}:{ActuatorConstants.DefaultApiPort}.");
         }
         catch (Exception ex)
         {
@@ -113,21 +147,31 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Closed(object? sender, EventArgs e)
     {
-        serialConnection.Dispose();
+        serialModuleManager.Dispose();
         await apiHost.DisposeAsync();
     }
 
-    private void DisplayState(ActuatorState state)
+    private void DisplayState(ActuatorStateBundle bundle)
     {
-        A1CurrentTextBlock.Text = FormatCurrent(state.A1Current);
-        A2CurrentTextBlock.Text = FormatCurrent(state.A2Current);
-        A3CurrentTextBlock.Text = FormatCurrent(state.A3Current);
-        A4CurrentTextBlock.Text = FormatCurrent(state.A4Current);
+        foreach (ModuleRow row in ModuleRows)
+        {
+            if (!bundle.Modules.TryGetValue(row.ModuleId, out ActuatorState? state))
+            {
+                continue;
+            }
 
-        A1TargetTextBlock.Text = FormatTarget(state.A1Target);
-        A2TargetTextBlock.Text = FormatTarget(state.A2Target);
-        A3TargetTextBlock.Text = FormatTarget(state.A3Target);
-        A4TargetTextBlock.Text = FormatTarget(state.A4Target);
+            row.Current = string.Join(" / ",
+                FormatCurrent(state.A1Current),
+                FormatCurrent(state.A2Current),
+                FormatCurrent(state.A3Current),
+                FormatCurrent(state.A4Current));
+
+            row.Target = string.Join(" / ",
+                FormatTarget(state.A1Target),
+                FormatTarget(state.A2Target),
+                FormatTarget(state.A3Target),
+                FormatTarget(state.A4Target));
+        }
     }
 
     private void SetStatus(string message)
