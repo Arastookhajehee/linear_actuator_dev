@@ -9,8 +9,10 @@ public sealed class ModuleRow : INotifyPropertyChanged
     private string comPort = string.Empty;
     private int baudRate;
     private string status = "Off";
-    private string current = "- / - / - / -";
-    private string target = "50 / 50 / 50 / 50";
+    private string c1T1 = "- / 50";
+    private string c2T2 = "- / 50";
+    private string c3T3 = "- / 50";
+    private string c4T4 = "- / 50";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -57,22 +59,42 @@ public sealed class ModuleRow : INotifyPropertyChanged
         }
     }
 
-    public string Current
+    public string C1T1
     {
-        get => current;
+        get => c1T1;
         set
         {
-            current = value;
+            c1T1 = value;
             OnPropertyChanged();
         }
     }
 
-    public string Target
+    public string C2T2
     {
-        get => target;
+        get => c2T2;
         set
         {
-            target = value;
+            c2T2 = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string C3T3
+    {
+        get => c3T3;
+        set
+        {
+            c3T3 = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string C4T4
+    {
+        get => c4T4;
+        set
+        {
+            c4T4 = value;
             OnPropertyChanged();
         }
     }

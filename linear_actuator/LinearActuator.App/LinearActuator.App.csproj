@@ -22,4 +22,8 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="8.*" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Resource Include="res\ModuleGrid.png" />
+  </ItemGroup>
+
 </Project>

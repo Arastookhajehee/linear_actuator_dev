@@ -97,9 +97,6 @@ public partial class MainWindow : Window
                 return;
             }
 
-            ModuleGrid.CommitEdit();
-            ModuleGrid.CommitEdit(System.Windows.Controls.DataGridEditingUnit.Row, true);
-
             List<PortMapping> mappings = ModuleRows.Select(row => new PortMapping
             {
                 Id = row.MappingId,
@@ -160,17 +157,10 @@ public partial class MainWindow : Window
                 continue;
             }
 
-            row.Current = string.Join(" / ",
-                FormatCurrent(state.A1Current),
-                FormatCurrent(state.A2Current),
-                FormatCurrent(state.A3Current),
-                FormatCurrent(state.A4Current));
-
-            row.Target = string.Join(" / ",
-                FormatTarget(state.A1Target),
-                FormatTarget(state.A2Target),
-                FormatTarget(state.A3Target),
-                FormatTarget(state.A4Target));
+            row.C1T1 = $"{FormatCurrent(state.A1Current)} / {FormatTarget(state.A1Target)}";
+            row.C2T2 = $"{FormatCurrent(state.A2Current)} / {FormatTarget(state.A2Target)}";
+            row.C3T3 = $"{FormatCurrent(state.A3Current)} / {FormatTarget(state.A3Target)}";
+            row.C4T4 = $"{FormatCurrent(state.A4Current)} / {FormatTarget(state.A4Target)}";
         }
     }
 
