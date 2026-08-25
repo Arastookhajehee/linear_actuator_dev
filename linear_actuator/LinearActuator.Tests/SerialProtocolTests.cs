@@ -1,4 +1,5 @@
 using LinearActuator.Core;
+using Newtonsoft.Json;
 
 namespace LinearActuator.Tests;
 
@@ -22,8 +23,9 @@ public sealed class SerialProtocolTests
 
     [Theory]
     [InlineData(-1)]
+    [InlineData(10.5)]
     [InlineData(801)]
-    public void FormatTargetCommand_RejectsTargetsOutsideArduinoRange(int target)
+    public void FormatTargetCommand_RejectsTargetsOutsideArduinoRange(double target)
     {
         ActuatorState state = new()
         {
@@ -34,6 +36,43 @@ public sealed class SerialProtocolTests
         };
 
         Assert.Throws<ArgumentOutOfRangeException>(() => SerialProtocol.FormatTargetCommand(state));
+    }
+
+    [Fact]
+    public void NewtonsoftSerialization_UsesApiJsonNames()
+    {
+        ActuatorStateBundle bundle = new()
+        {
+            Modules =
+            {
+                ["M01"] = new ActuatorState
+                {
+                    A1Target = 123,
+                    A2Target = 234,
+                    A3Target = 345,
+                    A4Target = 456
+                }
+            }
+        };
+
+        string json = JsonConvert.SerializeObject(bundle);
+
+        Assert.Contains("\"modules\"", json);
+        Assert.Contains("\"a1_target\":123", json);
+        Assert.DoesNotContain("Modules", json);
+        Assert.DoesNotContain("A1Target", json);
+    }
+
+    [Fact]
+    public void NewtonsoftDeserialization_ReadsApiJsonNames()
+    {
+        ActuatorStateBundle? bundle = JsonConvert.DeserializeObject<ActuatorStateBundle>("{\"modules\":{\"M01\":{\"a1_target\":123,\"a2_target\":234,\"a3_target\":345,\"a4_target\":456}}}");
+
+        Assert.NotNull(bundle);
+        Assert.Equal(123, bundle.Modules["M01"].A1Target);
+        Assert.Equal(234, bundle.Modules["M01"].A2Target);
+        Assert.Equal(345, bundle.Modules["M01"].A3Target);
+        Assert.Equal(456, bundle.Modules["M01"].A4Target);
     }
 
     [Fact]

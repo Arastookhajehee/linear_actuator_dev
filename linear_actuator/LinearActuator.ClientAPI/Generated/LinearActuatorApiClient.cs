@@ -36,7 +36,7 @@ namespace LinearActuator.ClientAPI
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ActuatorState> PostActuatorsAsync(ActuatorState state, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ActuatorState> PostActuatorsAsync(ActuatorState actuatorState, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
@@ -44,7 +44,7 @@ namespace LinearActuator.ClientAPI
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        System.Threading.Tasks.Task<ActuatorStateBundle> PostActuatorBundlesAsync(ActuatorStateBundle bundle, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
+        System.Threading.Tasks.Task<ActuatorStateBundle> PostActuatorBundlesAsync(ActuatorStateBundle actuatorStateBundle, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken));
 
     }
 
@@ -168,10 +168,10 @@ namespace LinearActuator.ClientAPI
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ActuatorState> PostActuatorsAsync(ActuatorState state, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ActuatorState> PostActuatorsAsync(ActuatorState actuatorState, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
-            if (state == null)
-                throw new System.ArgumentNullException("state");
+            if (actuatorState == null)
+                throw new System.ArgumentNullException("actuatorState");
 
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -179,7 +179,7 @@ namespace LinearActuator.ClientAPI
             {
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
-                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(state, JsonSerializerSettings);
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(actuatorState, JsonSerializerSettings);
                     var content_ = new System.Net.Http.StringContent(json_);
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                     request_.Content = content_;
@@ -222,6 +222,12 @@ namespace LinearActuator.ClientAPI
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
                         }
                         else
                         {
@@ -315,10 +321,10 @@ namespace LinearActuator.ClientAPI
 
         /// <param name="cancellationToken">A cancellation token that can be used by other objects or threads to receive notice of cancellation.</param>
         /// <exception cref="ApiException">A server side error occurred.</exception>
-        public virtual async System.Threading.Tasks.Task<ActuatorStateBundle> PostActuatorBundlesAsync(ActuatorStateBundle bundle, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
+        public virtual async System.Threading.Tasks.Task<ActuatorStateBundle> PostActuatorBundlesAsync(ActuatorStateBundle actuatorStateBundle, System.Threading.CancellationToken cancellationToken = default(System.Threading.CancellationToken))
         {
-            if (bundle == null)
-                throw new System.ArgumentNullException("bundle");
+            if (actuatorStateBundle == null)
+                throw new System.ArgumentNullException("actuatorStateBundle");
 
             var client_ = _httpClient;
             var disposeClient_ = false;
@@ -326,7 +332,7 @@ namespace LinearActuator.ClientAPI
             {
                 using (var request_ = new System.Net.Http.HttpRequestMessage())
                 {
-                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(bundle, JsonSerializerSettings);
+                    var json_ = Newtonsoft.Json.JsonConvert.SerializeObject(actuatorStateBundle, JsonSerializerSettings);
                     var content_ = new System.Net.Http.StringContent(json_);
                     content_.Headers.ContentType = System.Net.Http.Headers.MediaTypeHeaderValue.Parse("application/json");
                     request_.Content = content_;
@@ -369,6 +375,12 @@ namespace LinearActuator.ClientAPI
                                 throw new ApiException("Response was null which was not expected.", status_, objectResponse_.Text, headers_, null);
                             }
                             return objectResponse_.Object;
+                        }
+                        else
+                        if (status_ == 400)
+                        {
+                            string responseText_ = ( response_.Content == null ) ? string.Empty : await ReadAsStringAsync(response_.Content, cancellationToken).ConfigureAwait(false);
+                            throw new ApiException("A server side error occurred.", status_, responseText_, headers_, null);
                         }
                         else
                         {

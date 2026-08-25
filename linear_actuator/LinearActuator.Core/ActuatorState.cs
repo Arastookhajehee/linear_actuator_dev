@@ -1,31 +1,31 @@
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace LinearActuator.Core;
 
 public sealed class ActuatorState
 {
-    [JsonPropertyName("a1_current")]
+    [JsonProperty("a1_current")]
     public double? A1Current { get; set; }
 
-    [JsonPropertyName("a1_target")]
+    [JsonProperty("a1_target")]
     public double? A1Target { get; set; } = ActuatorConstants.DefaultTarget;
 
-    [JsonPropertyName("a2_current")]
+    [JsonProperty("a2_current")]
     public double? A2Current { get; set; }
 
-    [JsonPropertyName("a2_target")]
+    [JsonProperty("a2_target")]
     public double? A2Target { get; set; } = ActuatorConstants.DefaultTarget;
 
-    [JsonPropertyName("a3_current")]
+    [JsonProperty("a3_current")]
     public double? A3Current { get; set; }
 
-    [JsonPropertyName("a3_target")]
+    [JsonProperty("a3_target")]
     public double? A3Target { get; set; } = ActuatorConstants.DefaultTarget;
 
-    [JsonPropertyName("a4_current")]
+    [JsonProperty("a4_current")]
     public double? A4Current { get; set; }
 
-    [JsonPropertyName("a4_target")]
+    [JsonProperty("a4_target")]
     public double? A4Target { get; set; } = ActuatorConstants.DefaultTarget;
 
     public static ActuatorState CreateDefault() => new();

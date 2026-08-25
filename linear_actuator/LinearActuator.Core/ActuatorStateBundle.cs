@@ -1,17 +1,15 @@
-using System.Text.Json;
-using System.Text.Json.Serialization;
+using Newtonsoft.Json;
 
 namespace LinearActuator.Core;
 
 public sealed class ActuatorStateBundle
 {
-    private static readonly JsonSerializerOptions JsonOptions = new()
+    private static readonly JsonSerializerSettings JsonSettings = new()
     {
-        PropertyNameCaseInsensitive = true,
-        WriteIndented = true
+        Formatting = Formatting.Indented
     };
 
-    [JsonPropertyName("modules")]
+    [JsonProperty("modules")]
     public Dictionary<string, ActuatorState> Modules { get; set; } = new();
 
     public static ActuatorStateBundle CreateDefault()
@@ -38,7 +36,7 @@ public sealed class ActuatorStateBundle
         return clone;
     }
 
-    public string ToJson() => JsonSerializer.Serialize(this, JsonOptions);
+    public string ToJson() => JsonConvert.SerializeObject(this, JsonSettings);
 
-    public static ActuatorStateBundle? FromJson(string json) => JsonSerializer.Deserialize<ActuatorStateBundle>(json, JsonOptions);
+    public static ActuatorStateBundle? FromJson(string json) => JsonConvert.DeserializeObject<ActuatorStateBundle>(json, JsonSettings);
 }
