@@ -16,6 +16,7 @@ public partial class MainWindow : Window
     private readonly SerialModuleManager serialModuleManager = new();
     private readonly ActuatorApiHost apiHost;
     private readonly PortMappingRepository portMappingRepository;
+    private bool suppressSerialToggleEvents;
 
     public MainWindow()
     {
@@ -57,15 +58,17 @@ public partial class MainWindow : Window
 
             foreach (PortMapping mapping in mappings.OrderBy(GetModuleLayoutOrder))
             {
+                suppressSerialToggleEvents = true;
                 ModuleRows.Add(new ModuleRow
                 {
                     MappingId = mapping.Id,
                     ModuleId = mapping.ModuleId,
-                    SerialEnabled = mapping.SerialEnabled,
+                    SerialEnabled = false,
                     ComPort = mapping.ComPort,
                     BaudRate = mapping.BaudRate,
-                    Status = mapping.SerialEnabled ? "Enabled" : "Off"
+                    Status = "Off"
                 });
+                suppressSerialToggleEvents = false;
             }
 
             DisplayState(stateStore.SnapshotBundle());
@@ -85,26 +88,13 @@ public partial class MainWindow : Window
         {
             if (apiHost.IsRunning)
             {
-                serialModuleManager.Stop();
                 await apiHost.StopAsync();
                 StartStopButton.Content = "Start";
-                foreach (ModuleRow row in ModuleRows)
-                {
-                    row.Status = row.SerialEnabled ? "Enabled" : "Off";
-                }
-
                 SetStatus("Stopped.");
                 return;
             }
 
-            List<PortMapping> mappings = ModuleRows.Select(row => new PortMapping
-            {
-                Id = row.MappingId,
-                ModuleId = row.ModuleId,
-                ComPort = row.ComPort.Trim(),
-                BaudRate = row.BaudRate,
-                SerialEnabled = row.SerialEnabled
-            }).ToList();
+            List<PortMapping> mappings = CurrentMappings();
 
             PortMapping? invalidBaud = mappings.FirstOrDefault(mapping => mapping.BaudRate <= 0);
             if (invalidBaud is not null)
@@ -114,20 +104,6 @@ public partial class MainWindow : Window
             }
 
             await portMappingRepository.SaveAsync(mappings);
-            foreach (ModuleRow row in ModuleRows)
-            {
-                row.Status = row.SerialEnabled ? "Starting" : "Off";
-            }
-
-            serialModuleManager.Start(mappings);
-            IReadOnlyDictionary<string, bool> statuses = serialModuleManager.ConnectionStatuses;
-            foreach (ModuleRow row in ModuleRows)
-            {
-                row.Status = row.SerialEnabled
-                    ? statuses.TryGetValue(row.ModuleId, out bool connected) && connected ? "Connected" : "Unavailable"
-                    : "Off";
-            }
-
             await apiHost.StartAsync();
             StartStopButton.Content = "Stop";
             SetStatus($"API running at http://{ActuatorConstants.DefaultApiHost}:{ActuatorConstants.DefaultApiPort}.");
@@ -140,6 +116,73 @@ public partial class MainWindow : Window
         {
             StartStopButton.IsEnabled = true;
         }
+    }
+
+    private async void SerialToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (suppressSerialToggleEvents || sender is not FrameworkElement { DataContext: ModuleRow row })
+        {
+            return;
+        }
+
+        PortMapping mapping = ToPortMapping(row);
+
+        if (!row.SerialEnabled)
+        {
+            serialModuleManager.StopModule(row.ModuleId);
+            row.Status = "Off";
+            await portMappingRepository.SaveAsync(CurrentMappings());
+            SetStatus($"{row.ModuleId}: serial disconnected.");
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(mapping.ComPort))
+        {
+            row.Status = "COM port required";
+            SetStatus($"{row.ModuleId} COM port is required.");
+            ResetSerialToggle(row);
+            return;
+        }
+
+        if (mapping.BaudRate <= 0)
+        {
+            row.Status = "Invalid baud";
+            SetStatus($"{row.ModuleId} baud rate must be a positive number.");
+            ResetSerialToggle(row);
+            return;
+        }
+
+        row.Status = "Starting";
+        await portMappingRepository.SaveAsync(CurrentMappings());
+        bool connected = serialModuleManager.StartModule(mapping);
+        row.Status = connected ? "Connected" : "Unavailable";
+        SetStatus(connected
+            ? $"{row.ModuleId}: serial connected on {mapping.ComPort}."
+            : $"{row.ModuleId}: serial unavailable on {mapping.ComPort}.");
+    }
+
+    private void ResetSerialToggle(ModuleRow row)
+    {
+        suppressSerialToggleEvents = true;
+        row.SerialEnabled = false;
+        suppressSerialToggleEvents = false;
+    }
+
+    private List<PortMapping> CurrentMappings()
+    {
+        return ModuleRows.Select(ToPortMapping).ToList();
+    }
+
+    private static PortMapping ToPortMapping(ModuleRow row)
+    {
+        return new PortMapping
+        {
+            Id = row.MappingId,
+            ModuleId = row.ModuleId,
+            ComPort = row.ComPort.Trim(),
+            BaudRate = row.BaudRate,
+            SerialEnabled = row.SerialEnabled
+        };
     }
 
     private async void MainWindow_Closed(object? sender, EventArgs e)

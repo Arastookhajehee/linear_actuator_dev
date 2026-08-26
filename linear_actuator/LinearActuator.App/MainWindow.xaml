@@ -75,10 +75,11 @@
                                         </Grid.RowDefinitions>
 
                                         <DockPanel>
-                                            <TextBlock DockPanel.Dock="Left" Text="{Binding ModuleId}" FontSize="18" FontWeight="Bold" />
-                                            <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
-                                                      Content="On" IsChecked="{Binding SerialEnabled, UpdateSourceTrigger=PropertyChanged}" />
-                                        </DockPanel>
+                                             <TextBlock DockPanel.Dock="Left" Text="{Binding ModuleId}" FontSize="18" FontWeight="Bold" />
+                                             <CheckBox DockPanel.Dock="Right" HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                      Content="On" IsChecked="{Binding SerialEnabled, UpdateSourceTrigger=PropertyChanged}"
+                                                      Checked="SerialToggle_Changed" Unchecked="SerialToggle_Changed" />
+                                         </DockPanel>
 
                                         <Grid Grid.Row="1" Margin="0,8,0,0">
                                             <Grid.ColumnDefinitions>
