@@ -52,3 +52,6 @@ Thumbs.db
 # large file footage
 footage/
 archive/
+
+graphify-out/
+*/graphify-out/

@@ -1,0 +1,36 @@
+{
+  "runtime": "Net80",
+  "documentGenerator": {
+    "fromDocument": {
+      "url": "http://127.0.0.1:7500/swagger/v1/swagger.json",
+      "output": null
+    }
+  },
+  "codeGenerators": {
+    "openApiToCSharpClient": {
+      "clientBaseClass": null,
+      "configurationClass": null,
+      "generateClientClasses": true,
+      "generateClientInterfaces": true,
+      "clientClassAccessModifier": "public",
+      "typeAccessModifier": "public",
+      "namespace": "LinearActuator.ClientAPI",
+      "className": "LinearActuatorApiClient",
+      "injectHttpClient": true,
+      "disposeHttpClient": false,
+      "useBaseUrl": true,
+      "generateBaseUrlProperty": true,
+      "generateOptionalParameters": true,
+      "generateDtoTypes": false,
+      "excludedTypeNames": [
+        "ActuatorState",
+        "ActuatorStateBundle"
+      ],
+      "additionalNamespaceUsages": [
+        "LinearActuator.Core"
+      ],
+      "operationGenerationMode": "SingleClientFromOperationId",
+      "output": "Generated/LinearActuatorApiClient.cs"
+    }
+  }
+}
