@@ -108,7 +108,7 @@
                                                     </Style>
                                                 </TextBlock.Style>
                                             </TextBlock>
-                                            <TextBlock Grid.Row="2" Grid.ColumnSpan="5" Margin="0,4,0,0" Text="{Binding BinaryId}" FontSize="10" Foreground="#222222" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Row="2" Grid.ColumnSpan="5" Margin="0,4,0,0" Text="{Binding BinaryId}" FontFamily="Consolas" FontSize="10" Foreground="#222222" TextTrimming="CharacterEllipsis" />
                                         </Grid>
                                     </Border>
                                 </DataTemplate>

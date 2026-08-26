@@ -352,10 +352,10 @@ public partial class MainWindow : Window
     {
         if (state.BinaryIdValue is null)
         {
-            return "29 27 25 23: -";
+            return "29 27 25 23\n -  -  -  - (avg -)";
         }
 
-        return $"29 27 25 23: {state.BinaryIdPin29 ?? 0} {state.BinaryIdPin27 ?? 0} {state.BinaryIdPin25 ?? 0} {state.BinaryIdPin23 ?? 0} (avg {FormatAverageBinaryId(state.BinaryIdAverageValue)})";
+        return $"29 27 25 23\n {state.BinaryIdPin29 ?? 0}  {state.BinaryIdPin27 ?? 0}  {state.BinaryIdPin25 ?? 0}  {state.BinaryIdPin23 ?? 0} (avg {FormatAverageBinaryId(state.BinaryIdAverageValue)})";
     }
 
     private static string FormatAverageBinaryId(int? value) => value?.ToString() ?? "-";
