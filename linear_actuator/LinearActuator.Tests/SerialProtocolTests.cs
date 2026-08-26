@@ -78,7 +78,7 @@ public sealed class SerialProtocolTests
     [Fact]
     public void ParseTelemetry_ReadsArchiveJsonShape()
     {
-        ActuatorState? state = SerialProtocol.ParseTelemetry("{\"a1_current\":1.25,\"a1_target\":10,\"a2_current\":2,\"a2_target\":20,\"a3_current\":3,\"a3_target\":30,\"a4_current\":4,\"a4_target\":40}");
+        ActuatorState? state = SerialProtocol.ParseTelemetry("{\"a1_current\":1.25,\"a1_target\":10,\"a2_current\":2,\"a2_target\":20,\"a3_current\":3,\"a3_target\":30,\"a4_current\":4,\"a4_target\":40,\"binary_id_pin_23\":0,\"binary_id_pin_25\":1,\"binary_id_pin_27\":0,\"binary_id_pin_29\":1,\"binary_id_value\":5}");
 
         Assert.NotNull(state);
         Assert.Equal(1.25, state.A1Current);
@@ -89,5 +89,10 @@ public sealed class SerialProtocolTests
         Assert.Equal(30, state.A3Target);
         Assert.Equal(4, state.A4Current);
         Assert.Equal(40, state.A4Target);
+        Assert.Equal(0, state.BinaryIdPin23);
+        Assert.Equal(1, state.BinaryIdPin25);
+        Assert.Equal(0, state.BinaryIdPin27);
+        Assert.Equal(1, state.BinaryIdPin29);
+        Assert.Equal(5, state.BinaryIdValue);
     }
 }

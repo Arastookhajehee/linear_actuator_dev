@@ -13,6 +13,7 @@ public sealed class ModuleRow : INotifyPropertyChanged
     private string c2T2 = "- / 50";
     private string c3T3 = "- / 50";
     private string c4T4 = "- / 50";
+    private string binaryId = "23 25 27 29: -";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -95,6 +96,16 @@ public sealed class ModuleRow : INotifyPropertyChanged
         set
         {
             c4T4 = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string BinaryId
+    {
+        get => binaryId;
+        set
+        {
+            binaryId = value;
             OnPropertyChanged();
         }
     }

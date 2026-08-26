@@ -5,6 +5,7 @@
 #include "controller_config.h"
 #include "controller_state.h"
 #include "debug_helpers.h"
+#include "binary_module_id.h"
 #include "motor_driver.h"
 #include "sensor_position.h"
 #include "pid_control.h"
@@ -17,6 +18,7 @@ void setup()
 {
   Serial.begin(9600);
   debugLog("setup start");
+  setupBinaryModuleIdPins();
 
   for (int i = 0; i < ACTUATOR_COUNT; i++)
   {
@@ -31,6 +33,7 @@ void setup()
 
 void loop()
 {
+  updateBinaryModuleId();
   handleSerialInput();
 
   unsigned long now = millis();

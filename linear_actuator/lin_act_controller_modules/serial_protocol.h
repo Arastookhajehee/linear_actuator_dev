@@ -28,6 +28,11 @@ void sendTelemetry()
   payload["a3_target"] = targetMm[2];
   payload["a4_current"] = currentMm[3];
   payload["a4_target"] = targetMm[3];
+  payload["binary_id_pin_23"] = binaryModuleIdBits[0];
+  payload["binary_id_pin_25"] = binaryModuleIdBits[1];
+  payload["binary_id_pin_27"] = binaryModuleIdBits[2];
+  payload["binary_id_pin_29"] = binaryModuleIdBits[3];
+  payload["binary_id_value"] = binaryModuleIdValue;
 
   Serial.println(JSON.stringify(payload));
 }

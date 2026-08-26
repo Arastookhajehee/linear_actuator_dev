@@ -85,6 +85,11 @@ public sealed class ActuatorStateStore
             state.A2Current = telemetry.A2Current;
             state.A3Current = telemetry.A3Current;
             state.A4Current = telemetry.A4Current;
+            state.BinaryIdPin23 = telemetry.BinaryIdPin23;
+            state.BinaryIdPin25 = telemetry.BinaryIdPin25;
+            state.BinaryIdPin27 = telemetry.BinaryIdPin27;
+            state.BinaryIdPin29 = telemetry.BinaryIdPin29;
+            state.BinaryIdValue = telemetry.BinaryIdValue;
             snapshot = bundle.Clone();
         }
 

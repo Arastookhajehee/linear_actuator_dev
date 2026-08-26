@@ -204,6 +204,7 @@ public partial class MainWindow : Window
             row.C2T2 = $"{FormatCurrent(state.A2Current)} / {FormatTarget(state.A2Target)}";
             row.C3T3 = $"{FormatCurrent(state.A3Current)} / {FormatTarget(state.A3Target)}";
             row.C4T4 = $"{FormatCurrent(state.A4Current)} / {FormatTarget(state.A4Target)}";
+            row.BinaryId = FormatBinaryId(state);
         }
     }
 
@@ -215,6 +216,16 @@ public partial class MainWindow : Window
     private static string FormatCurrent(double? value) => value?.ToString("0.##") ?? "-";
 
     private static string FormatTarget(double? value) => value?.ToString() ?? "-";
+
+    private static string FormatBinaryId(ActuatorState state)
+    {
+        if (state.BinaryIdValue is null)
+        {
+            return "23 25 27 29: -";
+        }
+
+        return $"23 25 27 29: {state.BinaryIdPin23 ?? 0} {state.BinaryIdPin25 ?? 0} {state.BinaryIdPin27 ?? 0} {state.BinaryIdPin29 ?? 0} ({state.BinaryIdValue})";
+    }
 
     private static int GetModuleLayoutOrder(PortMapping mapping)
     {

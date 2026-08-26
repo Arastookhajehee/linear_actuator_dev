@@ -17,6 +17,8 @@ int pidPreviousError[ACTUATOR_COUNT] = {0, 0, 0, 0};
 int sensorHistory[ACTUATOR_COUNT][MODE_FILTER_WINDOW];
 int sensorHistoryIndex[ACTUATOR_COUNT] = {0, 0, 0, 0};
 int sensorHistoryCount[ACTUATOR_COUNT] = {0, 0, 0, 0};
+int binaryModuleIdBits[4] = {0, 0, 0, 0};
+int binaryModuleIdValue = 0;
 
 bool rpwmIsExtend[ACTUATOR_COUNT] = {false, false, false, false};
 bool actuatorMotionActive[ACTUATOR_COUNT] = {false, false, false, false};

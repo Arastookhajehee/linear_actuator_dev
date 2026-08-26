@@ -40,7 +40,12 @@ public sealed class ActuatorStateStoreTests
             A3Current = 3.5,
             A3Target = 33,
             A4Current = 4.5,
-            A4Target = 44
+            A4Target = 44,
+            BinaryIdPin23 = 0,
+            BinaryIdPin25 = 1,
+            BinaryIdPin27 = 0,
+            BinaryIdPin29 = 1,
+            BinaryIdValue = 5
         });
 
         ActuatorState snapshot = store.Snapshot();
@@ -52,6 +57,11 @@ public sealed class ActuatorStateStoreTests
         Assert.Equal(300, snapshot.A3Target);
         Assert.Equal(4.5, snapshot.A4Current);
         Assert.Equal(400, snapshot.A4Target);
+        Assert.Equal(0, snapshot.BinaryIdPin23);
+        Assert.Equal(1, snapshot.BinaryIdPin25);
+        Assert.Equal(0, snapshot.BinaryIdPin27);
+        Assert.Equal(1, snapshot.BinaryIdPin29);
+        Assert.Equal(5, snapshot.BinaryIdValue);
     }
 
     [Fact]

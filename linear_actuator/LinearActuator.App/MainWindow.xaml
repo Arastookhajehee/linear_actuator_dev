@@ -135,7 +135,15 @@
                                             </Border>
                                         </Grid>
 
-                                        <TextBlock Grid.Row="4" Margin="0,8,0,0" Text="{Binding Status}" Foreground="#444444" TextTrimming="CharacterEllipsis" />
+                                        <Grid Grid.Row="4" Margin="0,8,0,0">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="Auto" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <TextBlock Text="{Binding Status}" Foreground="#444444" TextTrimming="CharacterEllipsis" />
+                                            <TextBlock Grid.Column="1" Margin="8,0,0,0" Text="{Binding BinaryId}" Foreground="#222222" FontWeight="SemiBold" />
+                                        </Grid>
                                     </Grid>
                                 </Border>
                             </DataTemplate>
