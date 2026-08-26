@@ -39,22 +39,70 @@
                     <ColumnDefinition Width="Auto" />
                     <ColumnDefinition Width="*" />
                     <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="8" />
+                    <ColumnDefinition Width="Auto" />
                 </Grid.ColumnDefinitions>
 
                 <TextBlock VerticalAlignment="Center" Text="API" />
                 <TextBlock Grid.Column="1" Margin="8,0,16,0" VerticalAlignment="Center" Text="http://127.0.0.1:7500" />
                 <Button x:Name="StartStopButton" Grid.Column="2" Width="110" Click="StartStopButton_Click" Content="Start" />
+                <Button Grid.Column="4" Width="110" Click="GetCurrentButton_Click" Content="Get Current" />
+                <Button Grid.Column="6" Width="110" Click="SendTargetsButton_Click" Content="Send Targets" />
             </Grid>
         </Border>
 
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="145" />
+                <ColumnDefinition Width="16" />
                 <ColumnDefinition Width="3*" />
                 <ColumnDefinition Width="16" />
                 <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <Border Padding="10" BorderBrush="#D6D6D6" BorderThickness="1" CornerRadius="4" Background="#F4F6F8">
+            <GroupBox Header="Detected Ports">
+                <DockPanel Margin="8">
+                    <Button DockPanel.Dock="Top" Margin="0,0,0,8" Height="28" Click="RefreshPortsButton_Click" Content="Refresh Ports" />
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <ItemsControl ItemsSource="{Binding PortRows}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <Border Margin="0,0,0,6" Padding="6" BorderBrush="#D6D6D6" BorderThickness="1" CornerRadius="3">
+                                        <Grid>
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="56" />
+                                                <ColumnDefinition Width="70" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <CheckBox VerticalAlignment="Center" IsChecked="{Binding SerialEnabled, UpdateSourceTrigger=PropertyChanged}" Checked="PortToggle_Changed" Unchecked="PortToggle_Changed" />
+                                            <TextBlock Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" Text="{Binding ComPort}" FontWeight="SemiBold" />
+                                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{Binding MappedModuleId}" />
+                                            <TextBlock Grid.Column="3" VerticalAlignment="Center" Text="{Binding Status}" TextTrimming="CharacterEllipsis">
+                                                <TextBlock.Style>
+                                                    <Style TargetType="TextBlock">
+                                                        <Setter Property="Foreground" Value="#444444" />
+                                                        <Style.Triggers>
+                                                            <DataTrigger Binding="{Binding HasError}" Value="True">
+                                                                <Setter Property="Foreground" Value="Red" />
+                                                            </DataTrigger>
+                                                        </Style.Triggers>
+                                                    </Style>
+                                                </TextBlock.Style>
+                                            </TextBlock>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </ScrollViewer>
+                </DockPanel>
+            </GroupBox>
+
+            <Border Grid.Column="2" Padding="10" BorderBrush="#D6D6D6" BorderThickness="1" CornerRadius="4" Background="#F4F6F8">
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto">
                     <ItemsControl x:Name="ModuleGrid" ItemsSource="{Binding ModuleRows}">
                         <ItemsControl.ItemsPanel>
@@ -149,59 +197,13 @@
                 </ScrollViewer>
             </Border>
 
-            <Grid Grid.Column="2">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto" />
-                    <RowDefinition Height="16" />
-                    <RowDefinition Height="*" />
-                </Grid.RowDefinitions>
-
-                <GroupBox Header="Detected Ports">
-                    <DockPanel Margin="8">
-                        <Button DockPanel.Dock="Top" Margin="0,0,0,8" Height="28" Click="RefreshPortsButton_Click" Content="Refresh Ports" />
-                        <ItemsControl ItemsSource="{Binding PortRows}">
-                            <ItemsControl.ItemTemplate>
-                                <DataTemplate>
-                                    <Border Margin="0,0,0,6" Padding="6" BorderBrush="#D6D6D6" BorderThickness="1" CornerRadius="3">
-                                        <Grid>
-                                            <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="Auto" />
-                                                <ColumnDefinition Width="56" />
-                                                <ColumnDefinition Width="70" />
-                                                <ColumnDefinition Width="*" />
-                                            </Grid.ColumnDefinitions>
-
-                                            <CheckBox VerticalAlignment="Center" IsChecked="{Binding SerialEnabled, UpdateSourceTrigger=PropertyChanged}" Checked="PortToggle_Changed" Unchecked="PortToggle_Changed" />
-                                            <TextBlock Grid.Column="1" Margin="8,0,0,0" VerticalAlignment="Center" Text="{Binding ComPort}" FontWeight="SemiBold" />
-                                            <TextBlock Grid.Column="2" VerticalAlignment="Center" Text="{Binding MappedModuleId}" />
-                                            <TextBlock Grid.Column="3" VerticalAlignment="Center" Text="{Binding Status}" TextTrimming="CharacterEllipsis">
-                                                <TextBlock.Style>
-                                                    <Style TargetType="TextBlock">
-                                                        <Setter Property="Foreground" Value="#444444" />
-                                                        <Style.Triggers>
-                                                            <DataTrigger Binding="{Binding HasError}" Value="True">
-                                                                <Setter Property="Foreground" Value="Red" />
-                                                            </DataTrigger>
-                                                        </Style.Triggers>
-                                                    </Style>
-                                                </TextBlock.Style>
-                                            </TextBlock>
-                                        </Grid>
-                                    </Border>
-                                </DataTemplate>
-                            </ItemsControl.ItemTemplate>
-                        </ItemsControl>
-                    </DockPanel>
-                </GroupBox>
-
-                <GroupBox Grid.Row="2" Header="Module Layout Reference">
-                    <Border Padding="8" Background="#FAFAFA" ClipToBounds="True">
-                        <Grid>
-                            <Image Source="res/ModuleGrid.png" Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
-                        </Grid>
-                    </Border>
-                </GroupBox>
-            </Grid>
+            <GroupBox Grid.Column="4" Header="Module Layout Reference">
+                <Border Padding="8" Background="#FAFAFA" ClipToBounds="True">
+                    <Grid>
+                        <Image Source="res/ModuleGrid.png" Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+                    </Grid>
+                </Border>
+            </GroupBox>
         </Grid>
 
         <TextBlock x:Name="StatusTextBlock" Grid.Row="3" Margin="0,16,0,0" Text="Loading..." TextWrapping="Wrap" />

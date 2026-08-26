@@ -119,6 +119,23 @@ public partial class MainWindow : Window
         }
     }
 
+    private void GetCurrentButton_Click(object sender, RoutedEventArgs e)
+    {
+        DisplayState(stateStore.SnapshotBundle());
+        SetStatus("Current display refreshed from latest telemetry.");
+    }
+
+    private async void SendTargetsButton_Click(object sender, RoutedEventArgs e)
+    {
+        ActuatorStateBundle snapshot = stateStore.SnapshotBundle();
+        foreach (KeyValuePair<string, ActuatorState> module in snapshot.Modules)
+        {
+            await serialModuleManager.SendTargetsAsync(module.Key, module.Value);
+        }
+
+        SetStatus("Targets sent to mapped Arduino modules.");
+    }
+
     private void RefreshPortsButton_Click(object sender, RoutedEventArgs e)
     {
         serialModuleManager.Stop();
