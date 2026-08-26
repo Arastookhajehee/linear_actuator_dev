@@ -106,14 +106,14 @@ namespace LinearActuator.GhClient
             {
                 ActuatorStateBundle response = (ActuatorStateBundle)
                     client.PostActuatorBundlesAsync(targetBundle).GetAwaiter().GetResult();
-                RhinoApp.WriteLine(response.ToJson());
+                // RhinoApp.WriteLine(response.ToJson());
             }
 
             if (fetchCurrent)
             {
                 currentState = (ActuatorStateBundle)
                     client.GetActuatorBundlesAsync().GetAwaiter().GetResult();
-                RhinoApp.WriteLine(currentState.ToJson());
+                // RhinoApp.WriteLine(currentState.ToJson());
             }
 
             DA.SetData(0, currentState);
