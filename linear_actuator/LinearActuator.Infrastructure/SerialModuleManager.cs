@@ -158,6 +158,7 @@ public sealed class SerialModuleManager : IDisposable
         string? moduleId = ArduinoModuleManager.FormatModuleId(stableValue);
         if (moduleId is null)
         {
+            TelemetryReceived?.Invoke(this, new SerialTelemetryEventArgs(comPort, null, telemetry));
             if (stableValue is not null)
             {
                 ClearPortMapping(comPort);
@@ -174,6 +175,7 @@ public sealed class SerialModuleManager : IDisposable
         if (duplicateModuleIds.Contains(moduleId))
         {
             ClearPortMapping(comPort);
+            TelemetryReceived?.Invoke(this, new SerialTelemetryEventArgs(comPort, null, telemetry));
             return;
         }
 
@@ -182,6 +184,7 @@ public sealed class SerialModuleManager : IDisposable
             duplicateModuleIds.Add(moduleId);
             ClearPortMapping(existingComPort);
             ClearPortMapping(comPort);
+            TelemetryReceived?.Invoke(this, new SerialTelemetryEventArgs(comPort, null, telemetry));
             DuplicateModuleIdDetected?.Invoke(this, new SerialDuplicateModuleEventArgs(moduleId, existingComPort, comPort));
             return;
         }

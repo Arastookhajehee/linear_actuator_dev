@@ -29,6 +29,7 @@ public partial class MainWindow : Window
         stateStore.StateChanged += (_, bundle) => Dispatcher.Invoke(() => DisplayState(bundle));
         serialModuleManager.TelemetryReceived += (_, args) => Dispatcher.Invoke(() =>
         {
+            UpdatePortBinaryId(args.ComPort, args.Telemetry);
             if (args.ModuleId is null)
             {
                 return;
@@ -269,7 +270,15 @@ public partial class MainWindow : Window
             row.C2T2 = $"{FormatCurrent(state.A2Current)} / {FormatTarget(state.A2Target)}";
             row.C3T3 = $"{FormatCurrent(state.A3Current)} / {FormatTarget(state.A3Target)}";
             row.C4T4 = $"{FormatCurrent(state.A4Current)} / {FormatTarget(state.A4Target)}";
-            row.BinaryId = FormatBinaryId(state);
+        }
+    }
+
+    private void UpdatePortBinaryId(string comPort, ActuatorState telemetry)
+    {
+        PortRow? portRow = PortRows.FirstOrDefault(port => port.ComPort.Equals(comPort, StringComparison.OrdinalIgnoreCase));
+        if (portRow is not null)
+        {
+            portRow.BinaryId = FormatBinaryId(telemetry);
         }
     }
 
@@ -299,10 +308,10 @@ public partial class MainWindow : Window
     {
         if (state.BinaryIdValue is null)
         {
-            return "23 25 27 29: -";
+            return "29 27 25 23: -";
         }
 
-        return $"23 25 27 29: {state.BinaryIdPin23 ?? 0} {state.BinaryIdPin25 ?? 0} {state.BinaryIdPin27 ?? 0} {state.BinaryIdPin29 ?? 0} (avg {FormatAverageBinaryId(state.BinaryIdAverageValue)})";
+        return $"29 27 25 23: {state.BinaryIdPin29 ?? 0} {state.BinaryIdPin27 ?? 0} {state.BinaryIdPin25 ?? 0} {state.BinaryIdPin23 ?? 0} (avg {FormatAverageBinaryId(state.BinaryIdAverageValue)})";
     }
 
     private static string FormatAverageBinaryId(int? value) => value?.ToString() ?? "-";

@@ -8,6 +8,7 @@ public sealed class PortRow : INotifyPropertyChanged
     private bool serialEnabled;
     private string status = "Off";
     private string mappedModuleId = "-";
+    private string binaryId = "29 27 25 23: -";
     private bool hasError;
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -40,6 +41,16 @@ public sealed class PortRow : INotifyPropertyChanged
         set
         {
             mappedModuleId = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string BinaryId
+    {
+        get => binaryId;
+        set
+        {
+            binaryId = value;
             OnPropertyChanged();
         }
     }
