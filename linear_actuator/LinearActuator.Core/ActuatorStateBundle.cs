@@ -38,5 +38,7 @@ public sealed class ActuatorStateBundle
 
     public string ToJson() => JsonConvert.SerializeObject(this, JsonSettings);
 
+    public override string ToString() => ToJson();
+    
     public static ActuatorStateBundle? FromJson(string json) => JsonConvert.DeserializeObject<ActuatorStateBundle>(json, JsonSettings);
 }

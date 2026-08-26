@@ -7,7 +7,7 @@
         Rhino 8 Windows: net48, net7.0, net7.0-windows, net7.0-windows10.0.22000.0, etc
         Rhino 8 Mac: net7.0, net7.0-macos, net7.0-macos12.0, etc
     -->
-    <TargetFrameworks>net7.0-windows;net48</TargetFrameworks>
+    <TargetFrameworks>net8.0</TargetFrameworks>
     <EnableDynamicLoading>true</EnableDynamicLoading>
     <TargetExt>.gha</TargetExt>
     <NoWarn>NU1701;NETSDK1086</NoWarn>
@@ -41,6 +41,17 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies.net48" Version="1.0.3" ExcludeAssets="all" GeneratePathProperty="true" />
     <Reference Include="$(PkgMicrosoft_NETFramework_ReferenceAssemblies_net48)\build\.NETFramework\v4.8\System.Windows.Forms.dll" Private="False" />
     <PackageReference Include="System.Drawing.Common" Version="7.0.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\LinearActuator.Core\LinearActuator.Core.csproj" />
+    <ProjectReference Include="..\LinearActuator.Infrastructure\LinearActuator.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="LinearActuator.ClientAPI">
+      <HintPath>..\LinearActuator.ClientAPI\bin\Debug\net8.0\LinearActuator.ClientAPI.dll</HintPath>
+    </Reference>
   </ItemGroup>
 
 </Project>
