@@ -16,6 +16,7 @@ public partial class MainWindow : Window
     private readonly SerialModuleManager serialModuleManager = new();
     private readonly ActuatorApiHost apiHost;
     private bool suppressPortToggleEvents;
+    private bool suppressPortLockEvents;
     private bool hasDuplicateError;
 
     public MainWindow()
@@ -188,7 +189,9 @@ public partial class MainWindow : Window
         if (portRow is not null)
         {
             portRow.MappedModuleId = isMapped ? moduleId : "-";
-            portRow.Status = isMapped ? $"Mapped to {moduleId}" : "Connected, waiting for ID";
+            portRow.Status = isMapped
+                ? portRow.IsLocked ? $"Locked to {moduleId}" : $"Mapped to {moduleId}"
+                : "Connected, waiting for ID";
             portRow.HasError = false;
         }
 
@@ -226,6 +229,7 @@ public partial class MainWindow : Window
             serialModuleManager.StopPort(row.ComPort);
             row.Status = "Off";
             row.MappedModuleId = "-";
+            ResetPortLock(row);
             row.HasError = false;
             SetStatus($"{row.ComPort}: serial disconnected.");
             return;
@@ -248,6 +252,46 @@ public partial class MainWindow : Window
 
             row.Status = "Unavailable";
             row.HasError = true;
+        }
+    }
+
+    private void PortLock_Changed(object sender, RoutedEventArgs e)
+    {
+        if (suppressPortLockEvents || sender is not FrameworkElement { DataContext: PortRow row })
+        {
+            return;
+        }
+
+        if (!row.IsLocked)
+        {
+            serialModuleManager.UnlockPort(row.ComPort);
+            row.Status = row.MappedModuleId == "-" ? "Connected, waiting for ID" : $"Mapped to {row.MappedModuleId}";
+            SetStatus($"{row.ComPort}: mapping unlocked.");
+            return;
+        }
+
+        if (row.MappedModuleId == "-" || !serialModuleManager.LockPort(row.ComPort, row.MappedModuleId))
+        {
+            ResetPortLock(row);
+            row.Status = "Map before locking";
+            SetStatus($"{row.ComPort}: wait for a mapped module before locking.");
+            return;
+        }
+
+        row.Status = $"Locked to {row.MappedModuleId}";
+        SetStatus($"{row.ComPort}: locked to {row.MappedModuleId}.");
+    }
+
+    private void ResetPortLock(PortRow row)
+    {
+        try
+        {
+            suppressPortLockEvents = true;
+            row.IsLocked = false;
+        }
+        finally
+        {
+            suppressPortLockEvents = false;
         }
     }
 

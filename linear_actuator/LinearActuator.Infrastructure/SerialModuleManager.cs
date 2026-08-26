@@ -9,6 +9,7 @@ public sealed class SerialModuleManager : IDisposable
     private readonly Dictionary<string, string> moduleIdByPort = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Queue<int>> binaryIdSamplesByPort = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, int?> stableBinaryIdByPort = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> lockedModuleIdByPort = new(StringComparer.OrdinalIgnoreCase);
     private readonly HashSet<string> duplicateModuleIds = new(StringComparer.OrdinalIgnoreCase);
 
     public event EventHandler<SerialTelemetryEventArgs>? TelemetryReceived;
@@ -64,6 +65,25 @@ public sealed class SerialModuleManager : IDisposable
         ClearPortMapping(comPort);
         binaryIdSamplesByPort.Remove(comPort);
         stableBinaryIdByPort.Remove(comPort);
+        lockedModuleIdByPort.Remove(comPort);
+    }
+
+    public bool LockPort(string comPort, string moduleId)
+    {
+        if (!connectionsByPort.ContainsKey(comPort)
+            || !moduleIdByPort.TryGetValue(comPort, out string? currentModuleId)
+            || !currentModuleId.Equals(moduleId, StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        lockedModuleIdByPort[comPort] = moduleId;
+        return true;
+    }
+
+    public void UnlockPort(string comPort)
+    {
+        lockedModuleIdByPort.Remove(comPort);
     }
 
     public void Start(IEnumerable<PortMapping> mappings)
@@ -110,6 +130,7 @@ public sealed class SerialModuleManager : IDisposable
         moduleIdByPort.Clear();
         binaryIdSamplesByPort.Clear();
         stableBinaryIdByPort.Clear();
+        lockedModuleIdByPort.Clear();
         duplicateModuleIds.Clear();
 
         foreach (KeyValuePair<string, string> mapping in mappedPorts)
@@ -154,6 +175,12 @@ public sealed class SerialModuleManager : IDisposable
         int? stableValue = ArduinoModuleManager.UpdateBinaryIdAverage(binaryIdSamples, telemetry.BinaryIdValue, previousStableValue);
         stableBinaryIdByPort[comPort] = stableValue;
         telemetry.BinaryIdAverageValue = stableValue;
+
+        if (lockedModuleIdByPort.TryGetValue(comPort, out string? lockedModuleId))
+        {
+            TelemetryReceived?.Invoke(this, new SerialTelemetryEventArgs(comPort, lockedModuleId, telemetry));
+            return;
+        }
 
         string? moduleId = ArduinoModuleManager.FormatModuleId(stableValue);
         if (moduleId is null)

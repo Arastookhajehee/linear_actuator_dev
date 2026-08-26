@@ -9,6 +9,7 @@ public sealed class PortRow : INotifyPropertyChanged
     private string status = "Off";
     private string mappedModuleId = "-";
     private string binaryId = "29 27 25 23: -";
+    private bool isLocked;
     private bool hasError;
 
     public event PropertyChangedEventHandler? PropertyChanged;
@@ -51,6 +52,16 @@ public sealed class PortRow : INotifyPropertyChanged
         set
         {
             binaryId = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public bool IsLocked
+    {
+        get => isLocked;
+        set
+        {
+            isLocked = value;
             OnPropertyChanged();
         }
     }
