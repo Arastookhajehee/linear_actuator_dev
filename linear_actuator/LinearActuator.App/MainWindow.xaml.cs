@@ -136,25 +136,33 @@ public partial class MainWindow : Window
         SetStatus("Targets sent to mapped Arduino modules.");
     }
 
-    private void RefreshPortsButton_Click(object sender, RoutedEventArgs e)
+    private async void RefreshPortsButton_Click(object sender, RoutedEventArgs e)
     {
         serialModuleManager.Stop();
         hasDuplicateError = false;
         MarkAllModulesUnmapped();
+        ClearPortRows();
+        SetStatus("Cleared detected ports. Scanning for available COM ports...");
+        await Task.Delay(500);
         RefreshPortRows();
-        SetStatus("Ports refreshed. Toggle detected ports on to map Arduino modules.");
+        SetStatus($"Ports refreshed. Found {PortRows.Count} COM port(s). Toggle detected ports on to map Arduino modules.");
     }
 
     private void RefreshPortRows()
+    {
+        ClearPortRows();
+        foreach (string portName in SerialPortDiscovery.GetPortNames())
+        {
+            PortRows.Add(new PortRow { ComPort = portName });
+        }
+    }
+
+    private void ClearPortRows()
     {
         suppressPortToggleEvents = true;
         try
         {
             PortRows.Clear();
-            foreach (string portName in SerialPortDiscovery.GetPortNames())
-            {
-                PortRows.Add(new PortRow { ComPort = portName });
-            }
         }
         finally
         {
