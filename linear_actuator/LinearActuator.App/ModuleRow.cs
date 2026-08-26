@@ -14,6 +14,9 @@ public sealed class ModuleRow : INotifyPropertyChanged
     private string c3T3 = "- / 50";
     private string c4T4 = "- / 50";
     private string binaryId = "23 25 27 29: -";
+    private string mappedComPort = "-";
+    private string cardBackground = "White";
+    private string cardBorderBrush = "#C8CED6";
 
     public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -106,6 +109,36 @@ public sealed class ModuleRow : INotifyPropertyChanged
         set
         {
             binaryId = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string MappedComPort
+    {
+        get => mappedComPort;
+        set
+        {
+            mappedComPort = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string CardBackground
+    {
+        get => cardBackground;
+        set
+        {
+            cardBackground = value;
+            OnPropertyChanged();
+        }
+    }
+
+    public string CardBorderBrush
+    {
+        get => cardBorderBrush;
+        set
+        {
+            cardBorderBrush = value;
             OnPropertyChanged();
         }
     }

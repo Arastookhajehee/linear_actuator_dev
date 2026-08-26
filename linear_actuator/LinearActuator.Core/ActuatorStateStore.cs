@@ -3,7 +3,6 @@ namespace LinearActuator.Core;
 public sealed class ActuatorStateStore
 {
     private readonly object syncRoot = new();
-    private readonly Dictionary<string, Queue<int>> binaryIdSamplesByModule = new(StringComparer.OrdinalIgnoreCase);
     private ActuatorStateBundle bundle = ActuatorStateBundle.CreateDefault();
 
     public event EventHandler<ActuatorStateBundle>? StateChanged;
@@ -91,13 +90,7 @@ public sealed class ActuatorStateStore
             state.BinaryIdPin27 = telemetry.BinaryIdPin27;
             state.BinaryIdPin29 = telemetry.BinaryIdPin29;
             state.BinaryIdValue = telemetry.BinaryIdValue;
-            if (!binaryIdSamplesByModule.TryGetValue(moduleId, out Queue<int>? binaryIdSamples))
-            {
-                binaryIdSamples = new Queue<int>();
-                binaryIdSamplesByModule[moduleId] = binaryIdSamples;
-            }
-
-            state.BinaryIdAverageValue = ArduinoModuleManager.UpdateBinaryIdAverage(binaryIdSamples, telemetry.BinaryIdValue, state.BinaryIdAverageValue);
+            state.BinaryIdAverageValue = telemetry.BinaryIdAverageValue;
             snapshot = bundle.Clone();
         }
 

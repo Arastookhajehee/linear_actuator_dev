@@ -30,4 +30,11 @@ public static class ArduinoModuleManager
             ? rounded
             : previousStableValue;
     }
+
+    public static string? FormatModuleId(int? binaryIdValue)
+    {
+        return binaryIdValue is >= 1 and <= ActuatorConstants.ModuleCount
+            ? ActuatorConstants.FormatModuleId(binaryIdValue.Value)
+            : null;
+    }
 }

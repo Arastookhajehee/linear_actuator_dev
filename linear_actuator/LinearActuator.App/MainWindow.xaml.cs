@@ -1,47 +1,64 @@
-﻿using System.Collections.ObjectModel;
-using System.IO;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows;
+using System.Windows.Media;
 using LinearActuator.Core;
 using LinearActuator.Infrastructure;
-using Microsoft.EntityFrameworkCore;
 
 namespace LinearActuator.App;
 
 public partial class MainWindow : Window
 {
     public ObservableCollection<ModuleRow> ModuleRows { get; } = new();
+    public ObservableCollection<PortRow> PortRows { get; } = new();
 
     private readonly ActuatorStateStore stateStore = new();
     private readonly SerialModuleManager serialModuleManager = new();
     private readonly ActuatorApiHost apiHost;
-    private readonly PortMappingRepository portMappingRepository;
-    private bool suppressSerialToggleEvents;
+    private bool suppressPortToggleEvents;
+    private bool hasDuplicateError;
 
     public MainWindow()
     {
         InitializeComponent();
 
-        LinearActuatorDbContext dbContext = new(new DbContextOptionsBuilder<LinearActuatorDbContext>()
-            .UseSqlite($"Data Source={Path.Combine(AppContext.BaseDirectory, "linear-actuator-modules.db")}")
-            .Options);
-
-        portMappingRepository = new PortMappingRepository(dbContext);
         apiHost = new ActuatorApiHost(stateStore, serialModuleManager);
 
         DataContext = this;
 
         stateStore.StateChanged += (_, bundle) => Dispatcher.Invoke(() => DisplayState(bundle));
-        serialModuleManager.TelemetryReceived += (_, args) => stateStore.UpdateCurrents(args.ModuleId, args.Telemetry);
+        serialModuleManager.TelemetryReceived += (_, args) => Dispatcher.Invoke(() =>
+        {
+            if (args.ModuleId is null)
+            {
+                return;
+            }
+
+            UpdateModuleMapping(args.ComPort, args.ModuleId, true);
+            stateStore.UpdateCurrents(args.ModuleId, args.Telemetry);
+        });
         serialModuleManager.MessageReceived += (_, args) => Dispatcher.Invoke(() =>
         {
-            ModuleRow? row = ModuleRows.FirstOrDefault(module => module.ModuleId == args.ModuleId);
+            PortRow? row = PortRows.FirstOrDefault(port => port.ComPort.Equals(args.ComPort, StringComparison.OrdinalIgnoreCase));
             if (row is not null)
             {
                 row.Status = args.Message;
             }
 
-            SetStatus($"{args.ModuleId}: {args.Message}");
+            SetStatus($"{args.ComPort}: {args.Message}");
+        });
+        serialModuleManager.MappingChanged += (_, args) => Dispatcher.Invoke(() =>
+        {
+            if (args.ModuleId is not null)
+            {
+                UpdateModuleMapping(args.ComPort, args.ModuleId, args.IsMapped);
+            }
+        });
+        serialModuleManager.DuplicateModuleIdDetected += (_, args) => Dispatcher.Invoke(() =>
+        {
+            MarkDuplicatePort(args.FirstComPort);
+            MarkDuplicatePort(args.SecondComPort);
+            SetError($"Duplicate Arduino ID {args.ModuleId} detected on {args.FirstComPort} and {args.SecondComPort}. Fix wiring, then click Refresh Ports.");
         });
 
         Loaded += MainWindow_Loaded;
@@ -49,34 +66,28 @@ public partial class MainWindow : Window
         DisplayState(stateStore.SnapshotBundle());
     }
 
-    private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
+    private void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
         try
         {
-            List<PortMapping> mappings = await portMappingRepository.LoadOrCreateDefaultsAsync();
             ModuleRows.Clear();
-
-            foreach (PortMapping mapping in mappings.OrderBy(GetModuleLayoutOrder))
+            foreach (string moduleId in ModuleLayoutOrder())
             {
-                suppressSerialToggleEvents = true;
                 ModuleRows.Add(new ModuleRow
                 {
-                    MappingId = mapping.Id,
-                    ModuleId = mapping.ModuleId,
-                    SerialEnabled = false,
-                    ComPort = mapping.ComPort,
-                    BaudRate = mapping.BaudRate,
-                    Status = "Off"
+                    ModuleId = moduleId,
+                    BaudRate = ActuatorConstants.DefaultBaudRate,
+                    Status = "Unmapped"
                 });
-                suppressSerialToggleEvents = false;
             }
 
+            RefreshPortRows();
             DisplayState(stateStore.SnapshotBundle());
             SetStatus("Ready.");
         }
         catch (Exception ex)
         {
-            SetStatus($"Failed to load SQLite settings: {ex.Message}");
+            SetStatus($"Failed to load UI: {ex.Message}");
         }
     }
 
@@ -94,16 +105,6 @@ public partial class MainWindow : Window
                 return;
             }
 
-            List<PortMapping> mappings = CurrentMappings();
-
-            PortMapping? invalidBaud = mappings.FirstOrDefault(mapping => mapping.BaudRate <= 0);
-            if (invalidBaud is not null)
-            {
-                SetStatus($"{invalidBaud.ModuleId} baud rate must be a positive number.");
-                return;
-            }
-
-            await portMappingRepository.SaveAsync(mappings);
             await apiHost.StartAsync();
             StartStopButton.Content = "Stop";
             SetStatus($"API running at http://{ActuatorConstants.DefaultApiHost}:{ActuatorConstants.DefaultApiPort}.");
@@ -118,71 +119,110 @@ public partial class MainWindow : Window
         }
     }
 
-    private async void SerialToggle_Changed(object sender, RoutedEventArgs e)
+    private void RefreshPortsButton_Click(object sender, RoutedEventArgs e)
     {
-        if (suppressSerialToggleEvents || sender is not FrameworkElement { DataContext: ModuleRow row })
+        serialModuleManager.Stop();
+        hasDuplicateError = false;
+        MarkAllModulesUnmapped();
+        RefreshPortRows();
+        SetStatus("Ports refreshed. Toggle detected ports on to map Arduino modules.");
+    }
+
+    private void RefreshPortRows()
+    {
+        suppressPortToggleEvents = true;
+        try
+        {
+            PortRows.Clear();
+            foreach (string portName in SerialPortDiscovery.GetPortNames())
+            {
+                PortRows.Add(new PortRow { ComPort = portName });
+            }
+        }
+        finally
+        {
+            suppressPortToggleEvents = false;
+        }
+    }
+
+    private void MarkAllModulesUnmapped()
+    {
+        foreach (ModuleRow row in ModuleRows)
+        {
+            row.MappedComPort = "-";
+            row.Status = "Unmapped";
+            row.CardBackground = "White";
+            row.CardBorderBrush = "#C8CED6";
+        }
+    }
+
+    private void UpdateModuleMapping(string comPort, string moduleId, bool isMapped)
+    {
+        PortRow? portRow = PortRows.FirstOrDefault(port => port.ComPort.Equals(comPort, StringComparison.OrdinalIgnoreCase));
+        if (portRow is not null)
+        {
+            portRow.MappedModuleId = isMapped ? moduleId : "-";
+            portRow.Status = isMapped ? $"Mapped to {moduleId}" : "Connected, waiting for ID";
+            portRow.HasError = false;
+        }
+
+        ModuleRow? moduleRow = ModuleRows.FirstOrDefault(module => module.ModuleId == moduleId);
+        if (moduleRow is null)
         {
             return;
         }
 
-        PortMapping mapping = ToPortMapping(row);
+        moduleRow.MappedComPort = isMapped ? comPort : "-";
+        moduleRow.Status = isMapped ? "Mapped" : "Unmapped";
+        moduleRow.CardBackground = isMapped ? "#E8F7EA" : "White";
+        moduleRow.CardBorderBrush = isMapped ? "#36A852" : "#C8CED6";
+    }
+
+    private void MarkDuplicatePort(string comPort)
+    {
+        PortRow? portRow = PortRows.FirstOrDefault(port => port.ComPort.Equals(comPort, StringComparison.OrdinalIgnoreCase));
+        if (portRow is not null)
+        {
+            portRow.Status = "Duplicate ID";
+            portRow.HasError = true;
+        }
+    }
+
+    private void PortToggle_Changed(object sender, RoutedEventArgs e)
+    {
+        if (suppressPortToggleEvents || sender is not FrameworkElement { DataContext: PortRow row })
+        {
+            return;
+        }
 
         if (!row.SerialEnabled)
         {
-            serialModuleManager.StopModule(row.ModuleId);
+            serialModuleManager.StopPort(row.ComPort);
             row.Status = "Off";
-            await portMappingRepository.SaveAsync(CurrentMappings());
-            SetStatus($"{row.ModuleId}: serial disconnected.");
+            row.MappedModuleId = "-";
+            row.HasError = false;
+            SetStatus($"{row.ComPort}: serial disconnected.");
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(mapping.ComPort))
+        row.Status = "Connecting";
+        row.HasError = false;
+        bool connected = serialModuleManager.StartPort(row.ComPort, ActuatorConstants.DefaultBaudRate);
+        if (!connected)
         {
-            row.Status = "COM port required";
-            SetStatus($"{row.ModuleId} COM port is required.");
-            ResetSerialToggle(row);
-            return;
+            try
+            {
+                suppressPortToggleEvents = true;
+                row.SerialEnabled = false;
+            }
+            finally
+            {
+                suppressPortToggleEvents = false;
+            }
+
+            row.Status = "Unavailable";
+            row.HasError = true;
         }
-
-        if (mapping.BaudRate <= 0)
-        {
-            row.Status = "Invalid baud";
-            SetStatus($"{row.ModuleId} baud rate must be a positive number.");
-            ResetSerialToggle(row);
-            return;
-        }
-
-        row.Status = "Starting";
-        await portMappingRepository.SaveAsync(CurrentMappings());
-        bool connected = serialModuleManager.StartModule(mapping);
-        row.Status = connected ? "Connected" : "Unavailable";
-        SetStatus(connected
-            ? $"{row.ModuleId}: serial connected on {mapping.ComPort}."
-            : $"{row.ModuleId}: serial unavailable on {mapping.ComPort}.");
-    }
-
-    private void ResetSerialToggle(ModuleRow row)
-    {
-        suppressSerialToggleEvents = true;
-        row.SerialEnabled = false;
-        suppressSerialToggleEvents = false;
-    }
-
-    private List<PortMapping> CurrentMappings()
-    {
-        return ModuleRows.Select(ToPortMapping).ToList();
-    }
-
-    private static PortMapping ToPortMapping(ModuleRow row)
-    {
-        return new PortMapping
-        {
-            Id = row.MappingId,
-            ModuleId = row.ModuleId,
-            ComPort = row.ComPort.Trim(),
-            BaudRate = row.BaudRate,
-            SerialEnabled = row.SerialEnabled
-        };
     }
 
     private async void MainWindow_Closed(object? sender, EventArgs e)
@@ -210,6 +250,19 @@ public partial class MainWindow : Window
 
     private void SetStatus(string message)
     {
+        if (hasDuplicateError)
+        {
+            return;
+        }
+
+        StatusTextBlock.Foreground = Brushes.Black;
+        StatusTextBlock.Text = message;
+    }
+
+    private void SetError(string message)
+    {
+        hasDuplicateError = true;
+        StatusTextBlock.Foreground = Brushes.Red;
         StatusTextBlock.Text = message;
     }
 
@@ -229,21 +282,17 @@ public partial class MainWindow : Window
 
     private static string FormatAverageBinaryId(int? value) => value?.ToString() ?? "-";
 
-    private static int GetModuleLayoutOrder(PortMapping mapping)
+    private static IEnumerable<string> ModuleLayoutOrder()
     {
-        return mapping.ModuleId switch
-        {
-            "M06" => 1,
-            "M07" => 2,
-            "M08" => 3,
-            "M09" => 4,
-            "M10" => 5,
-            "M01" => 6,
-            "M02" => 7,
-            "M03" => 8,
-            "M04" => 9,
-            "M05" => 10,
-            _ => int.MaxValue
-        };
+        yield return "M06";
+        yield return "M07";
+        yield return "M08";
+        yield return "M09";
+        yield return "M10";
+        yield return "M01";
+        yield return "M02";
+        yield return "M03";
+        yield return "M04";
+        yield return "M05";
     }
 }

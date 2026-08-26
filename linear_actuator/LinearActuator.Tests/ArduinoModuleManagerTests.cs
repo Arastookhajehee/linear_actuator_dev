@@ -72,4 +72,15 @@ public sealed class ArduinoModuleManagerTests
 
         Assert.Equal(5, stableValue);
     }
+
+    [Theory]
+    [InlineData(1, "M01")]
+    [InlineData(10, "M10")]
+    [InlineData(0, null)]
+    [InlineData(11, null)]
+    [InlineData(15, null)]
+    public void FormatModuleId_OnlyMapsValidModuleIds(int binaryId, string? moduleId)
+    {
+        Assert.Equal(moduleId, ArduinoModuleManager.FormatModuleId(binaryId));
+    }
 }

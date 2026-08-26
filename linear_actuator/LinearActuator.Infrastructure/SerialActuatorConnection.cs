@@ -6,14 +6,14 @@ namespace LinearActuator.Infrastructure;
 
 public sealed class SerialActuatorConnection : IDisposable
 {
-    private readonly string moduleId;
+    private readonly string comPort;
     private SerialPort? serialPort;
     private CancellationTokenSource? readCancellation;
     private Task? readTask;
 
-    public SerialActuatorConnection(string moduleId)
+    public SerialActuatorConnection(string comPort)
     {
-        this.moduleId = moduleId;
+        this.comPort = comPort;
     }
 
     public event EventHandler<SerialTelemetryEventArgs>? TelemetryReceived;
@@ -91,7 +91,7 @@ public sealed class SerialActuatorConnection : IDisposable
             }
             catch (IOException ex)
             {
-                MessageReceived?.Invoke(this, new SerialMessageEventArgs(moduleId, ex.Message));
+                MessageReceived?.Invoke(this, new SerialMessageEventArgs(comPort, ex.Message));
                 break;
             }
 
@@ -103,11 +103,11 @@ public sealed class SerialActuatorConnection : IDisposable
             ActuatorState? telemetry = SerialProtocol.ParseTelemetry(line);
             if (telemetry is null)
             {
-                MessageReceived?.Invoke(this, new SerialMessageEventArgs(moduleId, line));
+                MessageReceived?.Invoke(this, new SerialMessageEventArgs(comPort, line));
                 continue;
             }
 
-            TelemetryReceived?.Invoke(this, new SerialTelemetryEventArgs(moduleId, telemetry));
+            TelemetryReceived?.Invoke(this, new SerialTelemetryEventArgs(comPort, null, telemetry));
         }
     }
 }
