@@ -66,10 +66,10 @@
                 <DockPanel Margin="8">
                     <Button DockPanel.Dock="Top" Margin="0,0,0,8" Height="28" Click="RefreshPortsButton_Click" Content="Refresh Ports" />
                     <StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0">
-                        <TextBlock Text="29 27 25 23" FontSize="10" Foreground="#666666" />
-                        <TextBlock Text="ID 1: 0 0 0 1" FontSize="10" Foreground="#666666" />
-                        <TextBlock Text="ID 5: 0 1 0 1" FontSize="10" Foreground="#666666" />
-                        <TextBlock Text="ID 8: 1 0 0 0" FontSize="10" Foreground="#666666" />
+                        <TextBlock Text="29 27 25 23" FontFamily="Consolas" FontSize="10" Foreground="#666666" />
+                        <TextBlock Text=" 0  0  0  1  ID 1" FontFamily="Consolas" FontSize="10" Foreground="#666666" />
+                        <TextBlock Text=" 0  1  0  1  ID 5" FontFamily="Consolas" FontSize="10" Foreground="#666666" />
+                        <TextBlock Text=" 1  0  0  0  ID 8" FontFamily="Consolas" FontSize="10" Foreground="#666666" />
                     </StackPanel>
                     <ScrollViewer VerticalScrollBarVisibility="Auto">
                         <ItemsControl ItemsSource="{Binding PortRows}">
