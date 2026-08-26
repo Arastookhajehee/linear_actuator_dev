@@ -224,8 +224,10 @@ public partial class MainWindow : Window
             return "23 25 27 29: -";
         }
 
-        return $"23 25 27 29: {state.BinaryIdPin23 ?? 0} {state.BinaryIdPin25 ?? 0} {state.BinaryIdPin27 ?? 0} {state.BinaryIdPin29 ?? 0} ({state.BinaryIdValue})";
+        return $"23 25 27 29: {state.BinaryIdPin23 ?? 0} {state.BinaryIdPin25 ?? 0} {state.BinaryIdPin27 ?? 0} {state.BinaryIdPin29 ?? 0} (avg {FormatAverageBinaryId(state.BinaryIdAverageValue)})";
     }
+
+    private static string FormatAverageBinaryId(int? value) => value?.ToString() ?? "-";
 
     private static int GetModuleLayoutOrder(PortMapping mapping)
     {

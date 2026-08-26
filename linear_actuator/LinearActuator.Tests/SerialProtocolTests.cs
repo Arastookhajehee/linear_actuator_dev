@@ -94,5 +94,6 @@ public sealed class SerialProtocolTests
         Assert.Equal(0, state.BinaryIdPin27);
         Assert.Equal(1, state.BinaryIdPin29);
         Assert.Equal(5, state.BinaryIdValue);
+        Assert.Null(state.BinaryIdAverageValue);
     }
 }

@@ -43,6 +43,9 @@ public sealed class ActuatorState
     [JsonProperty("binary_id_value")]
     public int? BinaryIdValue { get; set; }
 
+    [JsonProperty("binary_id_average_value")]
+    public int? BinaryIdAverageValue { get; set; }
+
     public static ActuatorState CreateDefault() => new();
 
     public ActuatorState Clone() => new()
@@ -59,6 +62,7 @@ public sealed class ActuatorState
         BinaryIdPin25 = BinaryIdPin25,
         BinaryIdPin27 = BinaryIdPin27,
         BinaryIdPin29 = BinaryIdPin29,
-        BinaryIdValue = BinaryIdValue
+        BinaryIdValue = BinaryIdValue,
+        BinaryIdAverageValue = BinaryIdAverageValue
     };
 }

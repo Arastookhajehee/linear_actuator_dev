@@ -62,6 +62,20 @@ public sealed class ActuatorStateStoreTests
         Assert.Equal(0, snapshot.BinaryIdPin27);
         Assert.Equal(1, snapshot.BinaryIdPin29);
         Assert.Equal(5, snapshot.BinaryIdValue);
+        Assert.Null(snapshot.BinaryIdAverageValue);
+    }
+
+    [Fact]
+    public void UpdateCurrents_SetsBinaryIdAverageAfterTenStableSamples()
+    {
+        ActuatorStateStore store = new();
+
+        for (int i = 0; i < 10; i++)
+        {
+            store.UpdateCurrents("M02", new ActuatorState { BinaryIdValue = 5 });
+        }
+
+        Assert.Equal(5, store.SnapshotBundle().Modules["M02"].BinaryIdAverageValue);
     }
 
     [Fact]
