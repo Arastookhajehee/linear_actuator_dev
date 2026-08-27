@@ -52,6 +52,7 @@ Thumbs.db
 # large file footage
 footage/
 archive/
+robot_ik/craine_robot_client/agb-robot-wsl-image.tar
 
 graphify-out/
 */graphify-out/
