@@ -25,3 +25,4 @@ publish/
 
 # Legacy/reference implementations are kept out of the C# rewrite commit.
 archive/
+*.3dmbak
