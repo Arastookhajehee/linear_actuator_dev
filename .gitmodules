@@ -1,0 +1,3 @@
+[submodule "spray_gun"]
+	path = spray_gun
+	url = https://github.com/Arastookhajehee/agb-spray-gun.git
